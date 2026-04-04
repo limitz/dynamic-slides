@@ -23,13 +23,17 @@ export default function Animated({ name, delay = 0, trigger = true, children }) 
   useLayoutEffect(() => {
     if (!trigger || firedRef.current || !name || !ref.current) return;
     firedRef.current = true;
-    loadAnimation(name).then(fn => fn?.(ref.current, { delay }));
+    loadAnimation(name).then(fn => {
+      if (!fn || !ref.current) return;
+      fn(ref.current, { delay });
+      ref.current.style.opacity = '';
+    });
   }, [trigger]);
 
   return (
     <div
       ref={ref}
-      style={trigger ? undefined : { opacity: 0, pointerEvents: 'none' }}
+      style={(!trigger || name) ? { opacity: 0, pointerEvents: trigger ? undefined : 'none' } : undefined}
     >
       {children}
     </div>

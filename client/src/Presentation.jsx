@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { usePresentation } from './usePresentation';
 import { PresentationContext } from './PresentationContext';
 import { useTheme } from './useTheme';
@@ -13,24 +13,59 @@ export default function Presentation() {
 
   // --- Transitions ---
   const prevIndexRef = useRef(state.currentIndex);
-  const [transitionKey, setTransitionKey] = useState(0);
-  const [direction, setDirection] = useState('forward');
-  const [exitingSlide, setExitingSlide] = useState(null);
+  const stageRef = useRef(null);
+  const exitRef = useRef(null);
 
-  useEffect(() => {
-    if (state.currentIndex === prevIndexRef.current) return;
+  // Refs used to pass data from render phase to layout effect
+  const snapshotRef = useRef(null);
+  const pendingRef = useRef(null);
+
+  const currentSlide = state.slides[state.currentIndex];
+
+  // During render (before React commits), detect slide change and
+  // clone the current DOM so the exit layer shows the exact same pixels.
+  if (state.currentIndex !== prevIndexRef.current) {
     const dir = state.currentIndex > prevIndexRef.current ? 'forward' : 'backward';
     const incoming = state.slides[state.currentIndex];
     const t = incoming?.transition ?? state.meta?.transition ?? 'none';
-    // Only track exiting slide when there's a transition to show
-    setExitingSlide(t !== 'none' ? (state.slides[prevIndexRef.current] ?? null) : null);
-    setDirection(dir);
-    setTransitionKey(k => k + 1);
-    prevIndexRef.current = state.currentIndex;
-  }, [state.currentIndex, state.slides]);
 
-  const currentSlide = state.slides[state.currentIndex];
-  const transition = currentSlide?.transition ?? state.meta?.transition ?? 'none';
+    if (t !== 'none' && stageRef.current) {
+      snapshotRef.current = stageRef.current.cloneNode(true);
+    }
+    pendingRef.current = { dir, transition: t };
+    prevIndexRef.current = state.currentIndex;
+  }
+
+  // After React commits the new slide content, set up the animations.
+  // Runs every render but bails immediately when there's no pending transition.
+  useLayoutEffect(() => {
+    const info = pendingRef.current;
+    if (!info) return;
+    pendingRef.current = null;
+
+    const snapshot = snapshotRef.current;
+    snapshotRef.current = null;
+    const exitEl = exitRef.current;
+    const stageEl = stageRef.current;
+
+    // Exit layer: insert the cloned old-slide DOM (untouched, no re-render)
+    if (snapshot && exitEl) {
+      exitEl.innerHTML = '';
+      while (snapshot.firstChild) exitEl.appendChild(snapshot.firstChild);
+      exitEl.className = `transition-layer slide-exit--${info.transition} dir-${info.dir}`;
+      exitEl.addEventListener('animationend', () => {
+        exitEl.className = 'transition-layer';
+        exitEl.innerHTML = '';
+      }, { once: true });
+    }
+
+    // Enter animation on the stage
+    if (stageEl && info.transition !== 'none') {
+      stageEl.className = 'transition-layer';
+      void stageEl.offsetWidth; // force reflow to restart animation
+      stageEl.className = `transition-layer slide-enter--${info.transition} dir-${info.dir}`;
+    }
+  });
 
   // --- Keyboard ---
   useEffect(() => {
@@ -52,33 +87,17 @@ export default function Presentation() {
     else document.exitFullscreen().catch(() => {});
   }
 
-  const enterCls = transition !== 'none'
-    ? `transition-layer slide-enter--${transition} dir-${direction}`
-    : 'transition-layer';
-
-  const exitCls = `transition-layer slide-exit--${transition} dir-${direction}`;
-
   return (
     <PresentationContext.Provider value={{ state, connected, send, next, prev, goTo }}>
       <div className="presentation">
         <div className="status">{connected ? '●' : '○'}</div>
 
         <div className="transition-stage">
-          {/* Exiting slide — removed when its CSS animation ends */}
-          {exitingSlide && (
-            <div
-              key={`exit-${transitionKey}`}
-              className={exitCls}
-              onAnimationEnd={(e) => {
-                if (e.target === e.currentTarget) setExitingSlide(null);
-              }}
-            >
-              <SlideRenderer slide={exitingSlide} step={Infinity} />
-            </div>
-          )}
-          {/* Entering slide */}
-          <div key={`enter-${transitionKey}`} className={enterCls}>
-            <SlideRenderer slide={currentSlide} step={state.currentStep ?? 0} />
+          {/* Exit layer — populated with cloned DOM during transitions */}
+          <div ref={exitRef} className="transition-layer" />
+          {/* Stage — always shows current slide, keyed to remount on slide change */}
+          <div ref={stageRef} className="transition-layer">
+            <SlideRenderer key={state.currentIndex} slide={currentSlide} step={state.currentStep ?? 0} />
           </div>
         </div>
 

@@ -11,13 +11,17 @@ function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
   useLayoutEffect(() => {
     if (!triggerAnim || firedRef.current || !animate || !ref.current) return;
     firedRef.current = true;
-    loadAnimation(animate).then(fn => fn?.(ref.current, { delay }));
+    loadAnimation(animate).then(fn => {
+      if (!fn || !ref.current) return;
+      fn(ref.current, { delay });
+      ref.current.style.opacity = '';
+    });
   }, [triggerAnim]);
 
   return (
     <li
       ref={ref}
-      style={visible ? undefined : { opacity: 0, pointerEvents: 'none' }}
+      style={(!visible || animate) ? { opacity: 0, pointerEvents: visible ? undefined : 'none' } : undefined}
     >
       {text}
     </li>
