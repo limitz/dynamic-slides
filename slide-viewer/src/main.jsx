@@ -4,8 +4,12 @@ import Presentation from './Presentation';
 import Controller from './Controller';
 import './index.css';
 
-// Load user's custom CSS (transitions, overrides) from project directory if present
-const projectStyles = import.meta.glob('@project/slides.css', { eager: true });
+// Inject slides.css as a <link> at runtime so it always loads after the bundled CSS,
+// guaranteeing project overrides win without needing !important.
+const link = document.createElement('link');
+link.rel = 'stylesheet';
+link.href = '/api/slides.css';
+document.head.appendChild(link);
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>

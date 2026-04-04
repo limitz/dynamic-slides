@@ -167,7 +167,67 @@ layout = "split"
   right_bullets = ["c", "d"]
 ```
 
+**image** — Full-slide image with optional heading and caption. Place files in `assets/`.
+```toml
+[[slide]]
+id = "photo"
+layout = "image"
+  [slide.content]
+  src = "/assets/photo.jpg"
+  alt = "Description"
+  heading = "Optional heading"
+  caption = "Optional caption"
+  fit = "contain"    # contain | cover (default: contain)
+```
+
+**video** — Full-slide video with optional heading and caption.
+```toml
+[[slide]]
+id = "demo"
+layout = "video"
+  [slide.content]
+  src = "/assets/demo.mp4"
+  heading = "Optional heading"
+  caption = "Optional caption"
+  autoplay = true    # default: false
+  loop = false       # default: false
+  muted = true       # default: true
+  controls = true    # default: false
+```
+
+Images can also appear inside **split** columns using `left_image` / `right_image`:
+```toml
+[[slide]]
+id = "compare"
+layout = "split"
+  [slide.content]
+  heading = "Before & After"
+  left_image = "/assets/before.jpg"
+  right_image = "/assets/after.jpg"
+```
+
 **blank** — Empty slide.
+
+**custom layouts** — Any unrecognised `layout` value is loaded as a React component from `layouts/` in the project directory (falling back to `${CLAUDE_SKILL_DIR}/slide-viewer/src/layouts/`).
+
+```
+my-project/
+└── layouts/
+    └── my-layout.jsx   # used with layout = "my-layout"
+```
+
+A layout component receives these props:
+```jsx
+export default function MyLayout({ slide, step, meta, slideNum, total, mini }) {
+  const c = slide.content || {};
+  return (
+    <div className={`slide slide--my-layout${mini ? ' slide--mini' : ''}`}>
+      <h2>{c.heading}</h2>
+      {/* ...custom content... */}
+    </div>
+  );
+}
+```
 
 **custom** — React component from `${CLAUDE_SKILL_DIR}/slide-viewer/src/modules/`.
 ```toml

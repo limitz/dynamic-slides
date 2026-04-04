@@ -57,6 +57,17 @@ app.use(express.json());
 const projectDir = dirname(SCRIPT_PATH);
 app.use('/assets', express.static(resolve(projectDir, 'assets')));
 
+// Serve project-level slides.css so the viewer can inject it after bundled CSS
+app.get('/slides.css', (req, res) => {
+  const cssPath = resolve(projectDir, 'slides.css');
+  if (existsSync(cssPath)) {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(cssPath);
+  } else {
+    res.status(404).end();
+  }
+});
+
 // CORS for Vite dev server
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -2,6 +2,7 @@ import { useRef, useLayoutEffect } from 'react';
 import { loadAnimation } from './AnimationLoader';
 import Animated from './Animated';
 import ModuleLoader from './ModuleLoader';
+import LayoutLoader from './LayoutLoader';
 
 // Animates a <li> directly (can't wrap li in a div without breaking list semantics)
 function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
@@ -121,10 +122,12 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity, me
             <div className="slide__left">
               <El tag="p"  content={c.left}    animate={c.left_animate}    delay={c.left_delay    ?? 100} />
               <Bullets items={c.left_bullets}  step={step} />
+              {c.left_image && <img src={c.left_image} alt={c.left_image_alt || ''} className="slide__media slide__media--column" style={{ objectFit: c.left_image_fit || 'contain' }} />}
             </div>
             <div className="slide__right">
               <El tag="p" content={c.right} animate={c.right_animate} delay={c.right_delay ?? 100} />
               <Bullets items={c.right_bullets} step={step} />
+              {c.right_image && <img src={c.right_image} alt={c.right_image_alt || ''} className="slide__media slide__media--column" style={{ objectFit: c.right_image_fit || 'contain' }} />}
             </div>
           </div>
           {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
@@ -140,6 +143,47 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity, me
         </div>
       );
 
+    case 'image':
+      return (
+        <div className={cls}>
+          {c.heading && <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />}
+          {c.src && (
+            <div className="slide__media-wrap">
+              <img
+                src={c.src}
+                alt={c.alt || ''}
+                className="slide__media"
+                style={{ objectFit: c.fit || 'contain' }}
+              />
+            </div>
+          )}
+          {c.caption && <p className="slide__caption">{c.caption}</p>}
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
+        </div>
+      );
+
+    case 'video':
+      return (
+        <div className={cls}>
+          {c.heading && <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />}
+          {c.src && (
+            <div className="slide__media-wrap">
+              <video
+                src={c.src}
+                className="slide__media"
+                autoPlay={c.autoplay ?? false}
+                loop={c.loop ?? false}
+                muted={c.muted ?? true}
+                controls={c.controls ?? false}
+                playsInline
+              />
+            </div>
+          )}
+          {c.caption && <p className="slide__caption">{c.caption}</p>}
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
+        </div>
+      );
+
     case 'blank':
       return (
         <div className={cls}>
@@ -149,12 +193,15 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity, me
 
     default:
       return (
-        <div className={cls}>
-          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
-          <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
-          <Bullets items={c.bullets} step={step} />
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
+        <LayoutLoader
+          layout={slide.layout}
+          slide={slide}
+          step={step}
+          meta={meta}
+          slideNum={slideNum}
+          total={total}
+          mini={mini}
+        />
       );
   }
 }
