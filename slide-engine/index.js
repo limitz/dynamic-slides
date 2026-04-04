@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const SCRIPT_PATH = process.env.SCRIPT || resolve(__dirname, '../presentation.toml');
+const SCRIPT_PATH = process.env.SCRIPT || resolve(process.cwd(), 'presentation.toml');
 const PORT = process.env.PORT || 3001;
 
 // --- State ---
@@ -52,6 +52,10 @@ loadScript();
 // --- Express app ---
 const app = express();
 app.use(express.json());
+
+// Serve static assets from the project directory (images, videos, etc.)
+const projectDir = dirname(SCRIPT_PATH);
+app.use('/assets', express.static(resolve(projectDir, 'assets')));
 
 // CORS for Vite dev server
 app.use((req, res, next) => {

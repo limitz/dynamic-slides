@@ -1,10 +1,10 @@
 {
-  "name": "present",
+  "name": "dynamic-slides",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "server": "node server/index.js",
-    "client": "cd client && npx vite",
-    "dev": "npm run server & npm run client"
+    "engine": "node slide-engine/index.js",
+    "viewer": "cd slide-viewer && npx vite",
+    "dev": "npm run engine & npm run viewer"
   }
 }

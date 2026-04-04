@@ -66,7 +66,19 @@ function El({ tag: Tag, content, animate, delay, className }) {
   return <Animated name={animate} delay={delay}>{el}</Animated>;
 }
 
-export default function SlideRenderer({ slide, mini = false, step = Infinity }) {
+function SlideFooter({ meta, slideNum, total }) {
+  if (!meta) return null;
+  const today = new Date().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+  return (
+    <div className="slide__footer">
+      <span>{[meta.title, meta.author].filter(Boolean).join(' — ')}</span>
+      <span>{today}</span>
+      <span>{slideNum} / {total}</span>
+    </div>
+  );
+}
+
+export default function SlideRenderer({ slide, mini = false, step = Infinity, meta, slideNum, total }) {
   if (!slide) return <div className="slide slide--empty">No slides loaded</div>;
 
   const cls = `slide slide--${slide.layout || 'default'}${mini ? ' slide--mini' : ''}`;
@@ -78,6 +90,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
         <div className={cls}>
           <El tag="h1" content={c.heading}    animate={c.heading_animate}    delay={c.heading_delay    ?? 0} />
           <El tag="h2" content={c.subheading} animate={c.subheading_animate} delay={c.subheading_delay ?? 150} />
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
 
@@ -87,6 +100,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
           <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
           <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
           <Bullets items={c.bullets} step={step} />
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
 
@@ -95,6 +109,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
         <div className={cls}>
           <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
           <Bullets items={c.bullets} step={step} />
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
 
@@ -112,6 +127,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
               <Bullets items={c.right_bullets} step={step} />
             </div>
           </div>
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
 
@@ -120,11 +136,16 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
         <div className={cls}>
           {!mini && <ModuleLoader path={slide.module} slide={slide} />}
           {mini  && <div className="slide__module-label">{slide.module || 'custom'}</div>}
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
 
     case 'blank':
-      return <div className={cls} />;
+      return (
+        <div className={cls}>
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
+        </div>
+      );
 
     default:
       return (
@@ -132,6 +153,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
           <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
           <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
           <Bullets items={c.bullets} step={step} />
+          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
   }

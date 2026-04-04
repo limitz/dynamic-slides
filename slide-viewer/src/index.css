@@ -8,7 +8,7 @@
   --text:        #eeeeee;
   --text-dim:    rgba(238,238,238,0.5);
   --text-faint:  rgba(238,238,238,0.25);
-  --accent:      #7c3aed;
+  --accent:      #ff1493;
   --font-sans:   system-ui, sans-serif;
   --font-heading: system-ui, sans-serif;
   --radius:      8px;
@@ -84,6 +84,7 @@ html, body, #root {
 }
 
 .slide {
+  position: relative;
   width: 90vw;
   max-width: 1200px;
   aspect-ratio: 16 / 9;
@@ -113,6 +114,18 @@ html, body, #root {
   font-size: clamp(1rem, 2vw, 1.5rem);
   line-height: 1.6;
   color: var(--text);
+}
+
+.slide__footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.7rem;
+  color: var(--text-faint);
 }
 
 .slide--split { flex-direction: column; gap: 2rem; padding-top: 3rem; }
@@ -243,10 +256,10 @@ html, body, #root {
 .controller {
   max-width: 480px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   min-height: 100%;
 }
 .controller__header {
@@ -256,23 +269,25 @@ html, body, #root {
   gap: 1rem;
 }
 .controller__status {
-  font-size: 0.8rem;
-  color: var(--text-faint);
+  font-size: 1rem;
+  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 .controller__clock {
   text-align: right;
-  font-size: 0.85rem;
-  color: var(--text-dim);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.2rem;
 }
-.controller__elapsed { font-size: 0.75rem; color: var(--text-faint); }
+.controller__elapsed { font-size: 1.4rem; font-weight: 700; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.controller__reset-hint { font-size: 0.65rem; font-weight: 400; color: var(--text-dim); }
 .controller__current {
   background: var(--surface);
   border-radius: var(--radius);
@@ -282,36 +297,38 @@ html, body, #root {
   gap: 0.75rem;
 }
 .controller__slide-info {
-  font-size: 0.8rem;
-  color: var(--text-faint);
+  font-size: 1rem;
+  color: var(--accent);
   display: flex;
   gap: 1rem;
+  font-weight: 600;
 }
-.controller__heading { font-size: 1.25rem; font-weight: 600; color: var(--text); }
+.controller__heading { font-size: 1.5rem; font-weight: 700; color: var(--text); }
 .controller__notes {
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--text-dim);
-  border-left: 2px solid var(--border2);
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--text);
+  border-left: 3px solid var(--text-dim);
   padding-left: 0.75rem;
 }
 .controller__next-up {
-  font-size: 0.8rem;
-  color: var(--text-faint);
+  font-size: 1rem;
+  color: var(--text-dim);
   font-style: italic;
 }
 .controller__nav {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 .controller__nav button {
   flex: 1;
-  padding: 0.75rem;
+  padding: 1rem;
   background: var(--surface2);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border2);
   border-radius: 6px;
   color: var(--text);
-  font-size: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   cursor: pointer;
 }
 .controller__nav button:disabled { opacity: 0.3; cursor: default; }
@@ -325,9 +342,9 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 0.75rem;
+  padding: 0.75rem;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   text-align: left;
@@ -335,16 +352,17 @@ html, body, #root {
   width: 100%;
 }
 .controller__slide-btn.active {
-  border-color: var(--border2);
+  border-color: var(--accent);
   background: var(--surface2);
 }
 .controller__slide-num {
-  font-size: 0.75rem;
-  color: var(--text-faint);
+  font-size: 1rem;
+  color: var(--text-dim);
+  font-weight: 600;
   min-width: 1.5rem;
 }
 .controller__slide-label {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;

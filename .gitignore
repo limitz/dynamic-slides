@@ -1,6 +1,7 @@
 node_modules/
-client/node_modules/
-client/dist/
-server/node_modules/
+slide-engine/node_modules/
+slide-viewer/node_modules/
+slide-viewer/dist/
 *.swp
 *.swo
+nohup.out

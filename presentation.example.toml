@@ -1,8 +1,10 @@
 [meta]
 title = "My Presentation"
 author = "wipkat"
-theme = "light"      # dark | light | terminal | paper
+theme = "dark"       # dark | light | terminal | paper
 transition = "fade"  # global default: fade | slide | zoom | none (or any plugin name)
+duration = 5         # max presentation duration in minutes
+warn_before = 1      # warn this many minutes before duration ends
 
 # Uncomment to override individual theme values:
 # [theme]

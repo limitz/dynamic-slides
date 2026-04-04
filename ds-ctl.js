@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * present-ctl — control the presentation server from the CLI (or Claude)
+ * ds-ctl — control the dynamic-slides server from the CLI (or Claude)
  *
  * Usage:
- *   node present-ctl.js state
- *   node present-ctl.js next
- *   node present-ctl.js prev
- *   node present-ctl.js goto <slide-id>
- *   node present-ctl.js reload
+ *   node ds-ctl.js state
+ *   node ds-ctl.js next
+ *   node ds-ctl.js prev
+ *   node ds-ctl.js goto <slide-id>
+ *   node ds-ctl.js reload
  *
  * Set PRESENT_URL to override the default server address.
  */

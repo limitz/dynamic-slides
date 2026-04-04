@@ -97,7 +97,7 @@ export default function Presentation() {
           <div ref={exitRef} className="transition-layer" />
           {/* Stage — always shows current slide, keyed to remount on slide change */}
           <div ref={stageRef} className="transition-layer">
-            <SlideRenderer key={state.currentIndex} slide={currentSlide} step={state.currentStep ?? 0} />
+            <SlideRenderer key={state.currentIndex} slide={currentSlide} step={state.currentStep ?? 0} meta={state.meta} slideNum={state.currentIndex + 1} total={state.slides.length} />
           </div>
         </div>
 

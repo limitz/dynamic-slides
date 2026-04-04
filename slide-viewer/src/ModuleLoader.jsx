@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 
-// Pre-register all modules in src/modules/ — Vite resolves these at build time
-const moduleMap = import.meta.glob('./modules/**/*.{jsx,tsx}');
+// Built-in modules
+const builtinMap = import.meta.glob('./modules/**/*.{jsx,tsx}');
+
+// User modules from project directory
+const projectMap = import.meta.glob('@project/modules/**/*.{jsx,tsx}');
+
+function findLoader(map, suffix) {
+  for (const [key, loader] of Object.entries(map)) {
+    if (key.endsWith(suffix)) return loader;
+  }
+  return null;
+}
 
 export default function ModuleLoader({ path, slide }) {
   const [Component, setComponent] = useState(null);
@@ -12,12 +22,18 @@ export default function ModuleLoader({ path, slide }) {
     if (!path) return;
 
     // Normalise: accept "modules/Foo.jsx", "./modules/Foo.jsx", or "Foo.jsx"
-    let key = path.startsWith('./') ? path : `./${path}`;
-    if (!key.includes('/')) key = `./modules/${key}`;
+    let normalized = path.startsWith('./') ? path.slice(2) : path;
+    if (!normalized.includes('/')) normalized = `modules/${normalized}`;
 
-    const loader = moduleMap[key];
+    // Try project modules first, then built-in
+    let loader = findLoader(projectMap, `/${normalized}`);
     if (!loader) {
-      setError(`Module not found: ${key}\nAvailable: ${Object.keys(moduleMap).join(', ') || '(none)'}`);
+      loader = findLoader(builtinMap, `/${normalized}`) || builtinMap[`./${normalized}`];
+    }
+
+    if (!loader) {
+      const allKeys = [...Object.keys(projectMap), ...Object.keys(builtinMap)];
+      setError(`Module not found: ${normalized}\nAvailable: ${allKeys.join(', ') || '(none)'}`);
       return;
     }
 
