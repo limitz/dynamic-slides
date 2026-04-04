@@ -1,40 +1,62 @@
-export default function SlideRenderer({ slide }) {
+function Bullets({ items }) {
+  if (!items?.length) return null;
+  return (
+    <ul className="slide__bullets">
+      {items.map((item, i) => <li key={i}>{item}</li>)}
+    </ul>
+  );
+}
+
+export default function SlideRenderer({ slide, mini = false }) {
   if (!slide) return <div className="slide slide--empty">No slides loaded</div>;
+
+  const cls = `slide slide--${slide.layout || 'default'}${mini ? ' slide--mini' : ''}`;
 
   switch (slide.layout) {
     case 'title':
       return (
-        <div className="slide slide--title">
+        <div className={cls}>
           <h1>{slide.content?.heading}</h1>
           {slide.content?.subheading && <h2>{slide.content.subheading}</h2>}
         </div>
       );
     case 'content':
       return (
-        <div className="slide slide--content">
+        <div className={cls}>
           {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-          <p>{slide.content?.body}</p>
+          {slide.content?.body && <p>{slide.content.body}</p>}
+          <Bullets items={slide.content?.bullets} />
+        </div>
+      );
+    case 'bullets':
+      return (
+        <div className={cls}>
+          {slide.content?.heading && <h2>{slide.content.heading}</h2>}
+          <Bullets items={slide.content?.bullets} />
         </div>
       );
     case 'split':
       return (
-        <div className="slide slide--split">
+        <div className={cls}>
           <div className="slide__left">
             {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-            <p>{slide.content?.left}</p>
+            {slide.content?.left && <p>{slide.content.left}</p>}
+            <Bullets items={slide.content?.left_bullets} />
           </div>
           <div className="slide__right">
-            <p>{slide.content?.right}</p>
+            {slide.content?.right && <p>{slide.content.right}</p>}
+            <Bullets items={slide.content?.right_bullets} />
           </div>
         </div>
       );
     case 'blank':
-      return <div className="slide slide--blank" />;
+      return <div className={cls} />;
     default:
       return (
-        <div className="slide slide--default">
+        <div className={cls}>
           {slide.content?.heading && <h2>{slide.content.heading}</h2>}
           {slide.content?.body && <p>{slide.content.body}</p>}
+          <Bullets items={slide.content?.bullets} />
         </div>
       );
   }

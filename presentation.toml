@@ -15,12 +15,12 @@ transition = "fade"
 
 [[slide]]
 id = "overview"
-layout = "content"
+layout = "bullets"
 transition = "slide"
 
   [slide.content]
   heading = "What We'll Cover"
-  body = "Topics go here."
+  bullets = ["First topic", "Second topic", "Third topic"]
   notes = "Keep this brief — one sentence per topic."
 
 [[slide]]
