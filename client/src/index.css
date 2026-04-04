@@ -1,12 +1,46 @@
+/* --- CSS variables (defaults match the "dark" preset) --- */
+:root {
+  --bg:          #111111;
+  --surface:     #1a1a1a;
+  --surface2:    #2a2a2a;
+  --border:      #333333;
+  --border2:     #444444;
+  --text:        #eeeeee;
+  --text-dim:    rgba(238,238,238,0.5);
+  --text-faint:  rgba(238,238,238,0.25);
+  --accent:      #7c3aed;
+  --font-sans:   system-ui, sans-serif;
+  --font-heading: system-ui, sans-serif;
+  --radius:      8px;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, #root {
   width: 100%;
   height: 100%;
-  background: #111;
-  color: #eee;
-  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
 }
+
+/* --- Transitions --- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(48px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-48px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.slide-anim--fade              { animation: fadeIn       0.35s ease both; }
+.slide-anim--slide.dir-forward { animation: slideInRight 0.3s  ease both; }
+.slide-anim--slide.dir-backward{ animation: slideInLeft  0.3s  ease both; }
 
 /* --- Presentation view --- */
 .presentation {
@@ -16,14 +50,15 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   position: relative;
+  background: var(--bg);
 }
 
 .slide {
   width: 90vw;
   max-width: 1200px;
   aspect-ratio: 16 / 9;
-  background: #1a1a1a;
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,9 +67,23 @@ html, body, #root {
   gap: 1.5rem;
 }
 
-.slide h1 { font-size: clamp(2rem, 5vw, 4rem); text-align: center; }
-.slide h2 { font-size: clamp(1.25rem, 3vw, 2.5rem); text-align: center; opacity: 0.7; }
-.slide p  { font-size: clamp(1rem, 2vw, 1.5rem); line-height: 1.6; }
+.slide h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 4rem);
+  text-align: center;
+  color: var(--text);
+}
+.slide h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.25rem, 3vw, 2.5rem);
+  text-align: center;
+  color: var(--text-dim);
+}
+.slide p {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  line-height: 1.6;
+  color: var(--text);
+}
 
 .slide--split { flex-direction: row; gap: 4rem; align-items: flex-start; padding-top: 3rem; }
 .slide__left, .slide__right { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
@@ -52,12 +101,13 @@ html, body, #root {
   line-height: 1.5;
   padding-left: 1.25em;
   position: relative;
+  color: var(--text);
 }
 .slide__bullets li::before {
   content: '—';
   position: absolute;
   left: 0;
-  opacity: 0.4;
+  color: var(--text-dim);
 }
 
 .slide--mini {
@@ -67,14 +117,28 @@ html, body, #root {
   border-radius: 4px;
   padding: 0.5rem;
   gap: 0.25rem;
-  font-size: 0.2rem;
   pointer-events: none;
 }
-.slide--mini h1 { font-size: 0.6em; }
-.slide--mini h2 { font-size: 0.5em; }
-.slide--mini p, .slide--mini li { font-size: 0.4em; }
+.slide--mini h1 { font-size: 0.55em; }
+.slide--mini h2 { font-size: 0.45em; }
+.slide--mini p, .slide--mini li { font-size: 0.35em; }
 
 .slide--empty { opacity: 0.3; font-size: 1.5rem; }
+
+.status {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+.progress {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
 
 /* --- Overview --- */
 .overview {
@@ -88,7 +152,6 @@ html, body, #root {
   z-index: 100;
   padding: 2rem;
 }
-
 .overview__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -98,10 +161,9 @@ html, body, #root {
   max-height: 80vh;
   overflow-y: auto;
 }
-
 .overview__item {
   background: none;
-  border: 2px solid #333;
+  border: 2px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -110,37 +172,18 @@ html, body, #root {
   padding: 0.4rem;
   transition: border-color 0.1s;
 }
-.overview__item:hover { border-color: #666; }
-.overview__item.active { border-color: #aaa; }
-
+.overview__item:hover  { border-color: var(--border2); }
+.overview__item.active { border-color: var(--text-dim); }
 .overview__slide-wrap {
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 3px;
 }
-
 .overview__label {
   font-size: 0.7rem;
-  opacity: 0.5;
+  color: var(--text-dim);
   text-align: left;
-  color: #eee;
-}
-
-.status {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.75rem;
-  opacity: 0.4;
-}
-
-.progress {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  font-size: 0.75rem;
-  opacity: 0.4;
 }
 
 /* --- Custom modules --- */
@@ -159,11 +202,11 @@ html, body, #root {
 .module-error code {
   font-size: 0.8rem;
   white-space: pre-wrap;
-  opacity: 0.8;
-  font-family: monospace;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
 }
-.module-loading { opacity: 0.4; font-size: 1rem; }
-.slide__module-label { font-size: 0.5em; opacity: 0.4; font-family: monospace; }
+.module-loading { color: var(--text-faint); font-size: 1rem; }
+.slide__module-label { font-size: 0.5em; color: var(--text-faint); font-family: monospace; }
 
 /* --- Controller view --- */
 .controller {
@@ -175,92 +218,103 @@ html, body, #root {
   gap: 1.5rem;
   min-height: 100%;
 }
-
-.controller__status {
+.controller__header {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
-  opacity: 0.5;
+  align-items: flex-start;
+  gap: 1rem;
 }
-
+.controller__status {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.controller__clock {
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+.controller__elapsed { font-size: 0.75rem; color: var(--text-faint); }
 .controller__current {
-  background: #1a1a1a;
-  border-radius: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
-
 .controller__slide-info {
   font-size: 0.8rem;
-  opacity: 0.5;
+  color: var(--text-faint);
   display: flex;
   gap: 1rem;
 }
-
-.controller__heading { font-size: 1.25rem; font-weight: 600; }
-
+.controller__heading { font-size: 1.25rem; font-weight: 600; color: var(--text); }
 .controller__notes {
   font-size: 0.9rem;
   line-height: 1.6;
-  opacity: 0.75;
-  border-left: 2px solid #444;
+  color: var(--text-dim);
+  border-left: 2px solid var(--border2);
   padding-left: 0.75rem;
 }
-
+.controller__next-up {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  font-style: italic;
+}
 .controller__nav {
   display: flex;
   gap: 1rem;
 }
-
 .controller__nav button {
   flex: 1;
   padding: 0.75rem;
-  background: #2a2a2a;
-  border: 1px solid #333;
+  background: var(--surface2);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #eee;
+  color: var(--text);
   font-size: 1rem;
   cursor: pointer;
 }
-
 .controller__nav button:disabled { opacity: 0.3; cursor: default; }
-.controller__nav button:not(:disabled):active { background: #3a3a3a; }
-
+.controller__nav button:not(:disabled):active { background: var(--border); }
 .controller__list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
-
 .controller__slide-btn {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.75rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #eee;
+  color: var(--text);
   text-align: left;
   cursor: pointer;
   width: 100%;
 }
-
 .controller__slide-btn.active {
-  border-color: #555;
-  background: #2a2a2a;
+  border-color: var(--border2);
+  background: var(--surface2);
 }
-
 .controller__slide-num {
   font-size: 0.75rem;
-  opacity: 0.4;
+  color: var(--text-faint);
   min-width: 1.5rem;
 }
-
 .controller__slide-label {
   font-size: 0.9rem;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -13,6 +13,16 @@ cd client && npx vite
 - Presentation view: http://localhost:5173
 - Controller (mobile): http://localhost:5173/controller
 
+## Keyboard shortcuts (presentation view)
+
+| Key | Action |
+|-----|--------|
+| `→` / `↓` | Next slide |
+| `←` / `↑` | Previous slide |
+| `Tab` | Toggle overview grid |
+| `Escape` | Close overview |
+| `F` | Toggle fullscreen |
+
 ## Authoring
 
 Edit `presentation.toml` directly — the server watches it and the browser updates automatically.
@@ -51,8 +61,16 @@ transition = "fade"       # optional
   right = "Right text"      # split layout
   left_bullets = ["a"]      # split layout
   right_bullets = ["b"]     # split layout
-  notes = "Speaker notes"   # shown in /controller view only
+  notes = "Speaker notes"    # shown in /controller view only
   module = "modules/Foo.jsx" # custom layout only
+
+# Theme — pick a preset and/or override individual values
+[meta]
+theme = "dark"   # dark | light | terminal | paper
+
+[theme]          # optional overrides
+accent = "#e11d48"
+font_heading = "Georgia, serif"
 ```
 
 ## Custom modules

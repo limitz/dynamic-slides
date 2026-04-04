@@ -1,7 +1,12 @@
 [meta]
 title = "My Presentation"
 author = "wipkat"
-theme = "dark"
+theme = "dark"   # dark | light | terminal | paper
+
+# Uncomment to override individual theme values:
+# [theme]
+# accent = "#e11d48"
+# font_heading = "Georgia, serif"
 
 [[slide]]
 id = "intro"

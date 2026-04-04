@@ -17,6 +17,7 @@ let state = {
   slides: [],
   currentIndex: 0,
   meta: {},
+  theme: {},
 };
 
 // --- Script loading ---
@@ -30,6 +31,7 @@ function loadScript() {
     const parsed = parse(raw);
     state.slides = parsed.slide || [];
     state.meta = parsed.meta || {};
+    state.theme = parsed.theme || {};
     console.log(`Loaded ${state.slides.length} slides from ${SCRIPT_PATH}`);
   } catch (err) {
     console.error('Failed to parse script:', err.message);
