@@ -145,18 +145,27 @@ wss.on('connection', (ws) => {
 
 function handleClientMessage(ws, msg) {
   switch (msg.type) {
-    case 'NEXT':
-      if (state.currentIndex < state.slides.length - 1) {
+    case 'NEXT': {
+      const fragments = countFragments(state.slides[state.currentIndex]);
+      if (state.currentStep < fragments) {
+        state.currentStep++;
+      } else if (state.currentIndex < state.slides.length - 1) {
         state.currentIndex++;
-        broadcast({ type: 'STATE', state });
+        state.currentStep = 0;
       }
+      broadcast({ type: 'STATE', state });
       break;
-    case 'PREV':
-      if (state.currentIndex > 0) {
+    }
+    case 'PREV': {
+      if (state.currentStep > 0) {
+        state.currentStep--;
+      } else if (state.currentIndex > 0) {
         state.currentIndex--;
-        broadcast({ type: 'STATE', state });
+        state.currentStep = countFragments(state.slides[state.currentIndex]);
       }
+      broadcast({ type: 'STATE', state });
       break;
+    }
     case 'GOTO':
       if (typeof msg.index === 'number' && msg.index >= 0 && msg.index < state.slides.length) {
         state.currentIndex = msg.index;

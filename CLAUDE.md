@@ -4,10 +4,11 @@
 
 ```bash
 # Terminal 1 — server (port 3001)
-node server/index.js
+# Use nohup so the server survives shell/agent disconnects
+nohup node server/index.js &
 
 # Terminal 2 — frontend (port 5173)
-cd client && npx vite
+cd client && nohup npx vite &
 ```
 
 - Presentation view: http://localhost:5173

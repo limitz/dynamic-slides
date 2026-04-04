@@ -101,14 +101,16 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity }) 
     case 'split':
       return (
         <div className={cls}>
-          <div className="slide__left">
-            <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
-            <El tag="p"  content={c.left}    animate={c.left_animate}    delay={c.left_delay    ?? 100} />
-            <Bullets items={c.left_bullets}  step={step} />
-          </div>
-          <div className="slide__right">
-            <El tag="p" content={c.right} animate={c.right_animate} delay={c.right_delay ?? 100} />
-            <Bullets items={c.right_bullets} step={step} />
+          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
+          <div className="slide__columns">
+            <div className="slide__left">
+              <El tag="p"  content={c.left}    animate={c.left_animate}    delay={c.left_delay    ?? 100} />
+              <Bullets items={c.left_bullets}  step={step} />
+            </div>
+            <div className="slide__right">
+              <El tag="p" content={c.right} animate={c.right_animate} delay={c.right_delay ?? 100} />
+              <Bullets items={c.right_bullets} step={step} />
+            </div>
           </div>
         </div>
       );
