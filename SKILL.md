@@ -59,7 +59,7 @@ layout = "title"
 Check if the engine is already running:
 
 ```bash
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js state
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state
 ```
 
 If it errors, start the stack from the user's working directory:
@@ -75,11 +75,11 @@ SLIDES_PROJECT_DIR="$(pwd)" nohup npx --prefix ${CLAUDE_SKILL_DIR}/slide-viewer 
 ## Controlling the Presentation
 
 ```bash
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js state          # get current slide + total
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js next           # advance one step (fragment or slide)
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js prev           # go back one step
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js goto <id>      # jump to slide by id
-node ${CLAUDE_SKILL_DIR}/ds-ctl.js reload         # force reload from disk
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state          # get current slide + total
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js next           # advance one step (fragment or slide)
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js prev           # go back one step
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js goto <id>      # jump to slide by id
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js reload         # force reload from disk
 ```
 
 When the user says "next", "go to slide X", "previous", etc., run the corresponding command. After navigation, run `state` to confirm and tell the user where they are.
