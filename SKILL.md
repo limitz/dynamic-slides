@@ -62,12 +62,14 @@ Check if the engine is already running:
 node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state
 ```
 
-If it errors, start the stack from the user's working directory:
+If it errors, start the stack. Run these two commands (the viewer must be started from its own directory):
 
 ```bash
 SCRIPT="$(pwd)/presentation.toml" nohup node ${CLAUDE_SKILL_DIR}/slide-engine/index.js > /dev/null 2>&1 &
-SLIDES_PROJECT_DIR="$(pwd)" nohup npx --prefix ${CLAUDE_SKILL_DIR}/slide-viewer vite --config ${CLAUDE_SKILL_DIR}/slide-viewer/vite.config.js --root ${CLAUDE_SKILL_DIR}/slide-viewer > /dev/null 2>&1 &
+SLIDES_PROJECT_DIR="$(pwd)" nohup npx --prefix ${CLAUDE_SKILL_DIR}/slide-viewer vite --config ${CLAUDE_SKILL_DIR}/slide-viewer/vite.config.js > /dev/null 2>&1 &
 ```
+
+> **Note:** The viewer command must be run with the working directory set to `${CLAUDE_SKILL_DIR}/slide-viewer`, otherwise Vite cannot find `index.html` and returns 404. Use `cd ${CLAUDE_SKILL_DIR}/slide-viewer &&` before the viewer command if needed, or verify with `curl -s http://localhost:5173 | head -1` — a successful start returns `<!doctype html>`, not an empty response.
 
 - Presentation: http://localhost:5173
 - Controller: http://localhost:5173/controller
