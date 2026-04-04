@@ -3,6 +3,7 @@ import { usePresentation } from './usePresentation';
 import { PresentationContext } from './PresentationContext';
 import { useTheme } from './useTheme';
 import SlideRenderer from './SlideRenderer';
+import TransitionLoader from './TransitionLoader';
 import Overview from './Overview';
 
 export default function Presentation() {
@@ -14,25 +15,29 @@ export default function Presentation() {
 
   // --- Transitions ---
   const prevIndexRef = useRef(state.currentIndex);
-  const [animKey, setAnimKey] = useState(0);
+  const [transitionKey, setTransitionKey] = useState(0);
   const [direction, setDirection] = useState('forward');
+  const [exitingSlide, setExitingSlide] = useState(null);
 
   useEffect(() => {
     if (state.currentIndex !== prevIndexRef.current) {
-      setDirection(state.currentIndex > prevIndexRef.current ? 'forward' : 'backward');
-      setAnimKey(k => k + 1);
+      const dir = state.currentIndex > prevIndexRef.current ? 'forward' : 'backward';
+      setExitingSlide(state.slides[prevIndexRef.current] ?? null);
+      setDirection(dir);
+      setTransitionKey(k => k + 1);
       prevIndexRef.current = state.currentIndex;
     }
-  }, [state.currentIndex]);
+  }, [state.currentIndex, state.slides]);
 
   const currentSlide = state.slides[state.currentIndex];
-  const transition = currentSlide?.transition || 'none';
+  // Per-slide transition, falling back to global meta default
+  const transition = currentSlide?.transition ?? state.meta?.transition ?? 'none';
 
   // --- Keyboard ---
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Tab') { e.preventDefault(); setOverview(v => !v); return; }
-      if (e.key === 'Escape') { setOverview(false); return; }
+      if (e.key === 'Tab')               { e.preventDefault(); setOverview(v => !v); return; }
+      if (e.key === 'Escape')            { setOverview(false); return; }
       if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); return; }
       if (!overview) {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
@@ -44,37 +49,35 @@ export default function Presentation() {
   }, [next, prev, overview]);
 
   function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen().catch(() => {});
   }
-
-  function handleOverviewSelect(index) {
-    goTo(index);
-    setOverview(false);
-  }
-
-  const animClass = transition !== 'none'
-    ? `slide-anim--${transition} dir-${direction}`
-    : '';
 
   return (
     <PresentationContext.Provider value={{ state, connected, send, next, prev, goTo }}>
       <div className="presentation">
         <div className="status">{connected ? '●' : '○'}</div>
-        <div key={animKey} className={animClass}>
-          <SlideRenderer slide={currentSlide} />
+
+        <div className="transition-stage">
+          <TransitionLoader
+            key={transitionKey}
+            name={transition}
+            entering={<SlideRenderer slide={currentSlide} />}
+            exiting={exitingSlide ? <SlideRenderer slide={exitingSlide} /> : null}
+            direction={direction}
+            onExited={() => setExitingSlide(null)}
+          />
         </div>
+
         <div className="progress">
           {state.slides.length > 0 && `${state.currentIndex + 1} / ${state.slides.length}`}
         </div>
+
         {overview && (
           <Overview
             slides={state.slides}
             currentIndex={state.currentIndex}
-            onSelect={handleOverviewSelect}
+            onSelect={(i) => { goTo(i); setOverview(false); }}
             onClose={() => setOverview(false)}
           />
         )}

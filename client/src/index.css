@@ -24,24 +24,6 @@ html, body, #root {
   font-family: var(--font-sans);
 }
 
-/* --- Transitions --- */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes slideInRight {
-  from { transform: translateX(48px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes slideInLeft {
-  from { transform: translateX(-48px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
-}
-
-.slide-anim--fade              { animation: fadeIn       0.35s ease both; }
-.slide-anim--slide.dir-forward { animation: slideInRight 0.3s  ease both; }
-.slide-anim--slide.dir-backward{ animation: slideInLeft  0.3s  ease both; }
-
 /* --- Presentation view --- */
 .presentation {
   width: 100%;
@@ -51,6 +33,28 @@ html, body, #root {
   justify-content: center;
   position: relative;
   background: var(--bg);
+}
+
+/* The transition-stage sizes to match the slide; plugins position layers inside it */
+.transition-stage {
+  position: relative;
+  width: 90vw;
+  max-width: 1200px;
+  aspect-ratio: 16 / 9;
+}
+
+/* Absolute layer for enter/exit overlap — used by transition plugins */
+.transition-layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* Slides inside the transition stage fill the container */
+.transition-stage .slide {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: unset;
 }
 
 .slide {
