@@ -1,0 +1,20 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "express": "^5.2.1",
+    "smol-toml": "^1.6.1",
+    "ws": "^8.20.0"
+  }
+}

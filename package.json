@@ -1,0 +1,10 @@
+{
+  "name": "present",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "server": "node server/index.js",
+    "client": "cd client && npx vite",
+    "dev": "npm run server & npm run client"
+  }
+}

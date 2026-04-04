@@ -1,0 +1,43 @@
+[meta]
+title = "My Presentation"
+author = "wipkat"
+theme = "dark"
+
+[[slide]]
+id = "intro"
+layout = "title"
+transition = "fade"
+
+  [slide.content]
+  heading = "Hello World"
+  subheading = "A presentation tool built with Claude"
+  notes = "Start with a warm welcome. Mention what we'll cover today."
+
+[[slide]]
+id = "overview"
+layout = "content"
+transition = "slide"
+
+  [slide.content]
+  heading = "What We'll Cover"
+  body = "Topics go here."
+  notes = "Keep this brief — one sentence per topic."
+
+[[slide]]
+id = "split-demo"
+layout = "split"
+transition = "slide"
+
+  [slide.content]
+  heading = "Two Columns"
+  left = "Left side content goes here."
+  right = "Right side content goes here."
+  notes = "Use this layout for comparisons."
+
+[[slide]]
+id = "fin"
+layout = "title"
+
+  [slide.content]
+  heading = "Thank You"
+  subheading = "Questions?"
