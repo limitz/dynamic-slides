@@ -22,12 +22,28 @@ transition = "fade"
 [[slide]]
 id = "overview"
 layout = "bullets"
-transition = "slide"
 
   [slide.content]
   heading = "What We'll Cover"
-  bullets = ["First topic", "Second topic", "Third topic"]
+  heading_animate = "fade-up"
   notes = "Keep this brief — one sentence per topic."
+
+  [[slide.content.bullets]]
+  text = "First topic"
+  animate = "fade-up"
+  delay = 100
+
+  [[slide.content.bullets]]
+  text = "Second topic"
+  animate = "fade-up"
+  delay = 200
+  fragment = true
+
+  [[slide.content.bullets]]
+  text = "Third topic"
+  animate = "fade-up"
+  delay = 300
+  fragment = true
 
 [[slide]]
 id = "split-demo"

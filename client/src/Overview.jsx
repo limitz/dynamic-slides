@@ -11,7 +11,7 @@ export default function Overview({ slides, currentIndex, onSelect, onClose }) {
             onClick={() => onSelect(i)}
           >
             <div className="overview__slide-wrap">
-              <SlideRenderer slide={slide} mini />
+              <SlideRenderer slide={slide} mini step={Infinity} />
             </div>
             <span className="overview__label">
               {i + 1}{slide.id ? ` · ${slide.id}` : ''}

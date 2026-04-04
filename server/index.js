@@ -16,9 +16,17 @@ const PORT = process.env.PORT || 3001;
 let state = {
   slides: [],
   currentIndex: 0,
+  currentStep: 0,
   meta: {},
   theme: {},
 };
+
+// Count fragment elements in a slide (bullets with fragment: true)
+function countFragments(slide) {
+  if (!slide) return 0;
+  const bullets = slide.content?.bullets || [];
+  return bullets.filter(b => typeof b === 'object' && b !== null && b.fragment).length;
+}
 
 // --- Script loading ---
 function loadScript() {
@@ -32,6 +40,7 @@ function loadScript() {
     state.slides = parsed.slide || [];
     state.meta = parsed.meta || {};
     state.theme = parsed.theme || {};
+    state.currentStep = 0;
     console.log(`Loaded ${state.slides.length} slides from ${SCRIPT_PATH}`);
   } catch (err) {
     console.error('Failed to parse script:', err.message);
@@ -60,20 +69,27 @@ app.get('/state', (req, res) => {
 
 // POST /slide/next
 app.post('/slide/next', (req, res) => {
-  if (state.currentIndex < state.slides.length - 1) {
+  const fragments = countFragments(state.slides[state.currentIndex]);
+  if (state.currentStep < fragments) {
+    state.currentStep++;
+  } else if (state.currentIndex < state.slides.length - 1) {
     state.currentIndex++;
-    broadcast({ type: 'STATE', state });
+    state.currentStep = 0;
   }
-  res.json({ currentIndex: state.currentIndex });
+  broadcast({ type: 'STATE', state });
+  res.json({ currentIndex: state.currentIndex, currentStep: state.currentStep });
 });
 
 // POST /slide/prev
 app.post('/slide/prev', (req, res) => {
-  if (state.currentIndex > 0) {
+  if (state.currentStep > 0) {
+    state.currentStep--;
+  } else if (state.currentIndex > 0) {
     state.currentIndex--;
-    broadcast({ type: 'STATE', state });
+    state.currentStep = countFragments(state.slides[state.currentIndex]);
   }
-  res.json({ currentIndex: state.currentIndex });
+  broadcast({ type: 'STATE', state });
+  res.json({ currentIndex: state.currentIndex, currentStep: state.currentStep });
 });
 
 // POST /slide/:id
@@ -81,8 +97,9 @@ app.post('/slide/:id', (req, res) => {
   const idx = state.slides.findIndex(s => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Slide not found' });
   state.currentIndex = idx;
+  state.currentStep = 0;
   broadcast({ type: 'STATE', state });
-  res.json({ currentIndex: state.currentIndex });
+  res.json({ currentIndex: state.currentIndex, currentStep: state.currentStep });
 });
 
 // PATCH /script — update script content and reload
@@ -143,6 +160,7 @@ function handleClientMessage(ws, msg) {
     case 'GOTO':
       if (typeof msg.index === 'number' && msg.index >= 0 && msg.index < state.slides.length) {
         state.currentIndex = msg.index;
+        state.currentStep = 0;
         broadcast({ type: 'STATE', state });
       }
       break;

@@ -62,8 +62,8 @@ export default function Presentation() {
           <TransitionLoader
             key={transitionKey}
             name={transition}
-            entering={<SlideRenderer slide={currentSlide} />}
-            exiting={exitingSlide ? <SlideRenderer slide={exitingSlide} /> : null}
+            entering={<SlideRenderer slide={currentSlide} step={state.currentStep ?? 0} />}
+            exiting={exitingSlide ? <SlideRenderer slide={exitingSlide} step={Infinity} /> : null}
             direction={direction}
             onExited={() => setExitingSlide(null)}
           />

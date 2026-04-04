@@ -1,73 +1,131 @@
+import { useRef, useEffect } from 'react';
+import { loadAnimation } from './AnimationLoader';
+import Animated from './Animated';
 import ModuleLoader from './ModuleLoader';
 
-function Bullets({ items }) {
+// Animates a <li> directly (can't wrap li in a div without breaking list semantics)
+function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
+  const ref = useRef(null);
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    if (!triggerAnim || firedRef.current || !animate || !ref.current) return;
+    firedRef.current = true;
+    loadAnimation(animate).then(fn => fn?.(ref.current, { delay }));
+  }, [triggerAnim]);
+
+  return (
+    <li
+      ref={ref}
+      style={visible ? undefined : { opacity: 0, pointerEvents: 'none' }}
+    >
+      {text}
+    </li>
+  );
+}
+
+// Bullets: items can be strings or { text, animate, delay, fragment }
+function Bullets({ items, step = Infinity }) {
   if (!items?.length) return null;
+  let fragCount = 0;
   return (
     <ul className="slide__bullets">
-      {items.map((item, i) => <li key={i}>{item}</li>)}
+      {items.map((item, i) => {
+        const isObj = typeof item === 'object' && item !== null;
+        const text       = isObj ? item.text      : item;
+        const animate    = isObj ? item.animate    : null;
+        const delay      = isObj ? (item.delay ?? 0) : 0;
+        const isFragment = isObj && item.fragment;
+        const fragIdx    = isFragment ? ++fragCount : 0;
+        const visible    = !isFragment || step >= fragIdx;
+
+        return (
+          <AnimatedLi
+            key={i}
+            text={text}
+            animate={animate}
+            delay={delay}
+            visible={visible}
+            triggerAnim={visible}
+          />
+        );
+      })}
     </ul>
   );
 }
 
-export default function SlideRenderer({ slide, mini = false }) {
+// Wrap a heading/body element with an optional entrance animation
+function El({ tag: Tag, content, animate, delay, className }) {
+  if (!content) return null;
+  const el = <Tag className={className}>{content}</Tag>;
+  if (!animate) return el;
+  return <Animated name={animate} delay={delay}>{el}</Animated>;
+}
+
+export default function SlideRenderer({ slide, mini = false, step = Infinity }) {
   if (!slide) return <div className="slide slide--empty">No slides loaded</div>;
 
   const cls = `slide slide--${slide.layout || 'default'}${mini ? ' slide--mini' : ''}`;
+  const c = slide.content || {};
 
   switch (slide.layout) {
     case 'title':
       return (
         <div className={cls}>
-          <h1>{slide.content?.heading}</h1>
-          {slide.content?.subheading && <h2>{slide.content.subheading}</h2>}
+          <El tag="h1" content={c.heading}    animate={c.heading_animate}    delay={c.heading_delay    ?? 0} />
+          <El tag="h2" content={c.subheading} animate={c.subheading_animate} delay={c.subheading_delay ?? 150} />
         </div>
       );
+
     case 'content':
       return (
         <div className={cls}>
-          {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-          {slide.content?.body && <p>{slide.content.body}</p>}
-          <Bullets items={slide.content?.bullets} />
+          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
+          <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
+          <Bullets items={c.bullets} step={step} />
         </div>
       );
+
     case 'bullets':
       return (
         <div className={cls}>
-          {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-          <Bullets items={slide.content?.bullets} />
+          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
+          <Bullets items={c.bullets} step={step} />
         </div>
       );
+
     case 'split':
       return (
         <div className={cls}>
           <div className="slide__left">
-            {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-            {slide.content?.left && <p>{slide.content.left}</p>}
-            <Bullets items={slide.content?.left_bullets} />
+            <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
+            <El tag="p"  content={c.left}    animate={c.left_animate}    delay={c.left_delay    ?? 100} />
+            <Bullets items={c.left_bullets}  step={step} />
           </div>
           <div className="slide__right">
-            {slide.content?.right && <p>{slide.content.right}</p>}
-            <Bullets items={slide.content?.right_bullets} />
+            <El tag="p" content={c.right} animate={c.right_animate} delay={c.right_delay ?? 100} />
+            <Bullets items={c.right_bullets} step={step} />
           </div>
         </div>
       );
+
     case 'custom':
       return (
         <div className={cls}>
           {!mini && <ModuleLoader path={slide.module} slide={slide} />}
-          {mini && (
-            <div className="slide__module-label">{slide.module || 'custom'}</div>
-          )}
+          {mini  && <div className="slide__module-label">{slide.module || 'custom'}</div>}
         </div>
       );
+
     case 'blank':
       return <div className={cls} />;
+
     default:
       return (
         <div className={cls}>
-          {slide.content?.heading && <h2>{slide.content.heading}</h2>}
-          {slide.content?.body && <p>{slide.content.body}</p>}
-          <Bullets items={slide.content?.bullets} />
+          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
+          <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
+          <Bullets items={c.bullets} step={step} />
         </div>
       );
   }
