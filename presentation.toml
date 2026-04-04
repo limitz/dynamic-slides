@@ -1,7 +1,7 @@
 [meta]
 title = "My Presentation"
 author = "wipkat"
-theme = "dark"       # dark | light | terminal | paper
+theme = "light"      # dark | light | terminal | paper
 transition = "fade"  # global default: fade | slide | zoom | none (or any plugin name)
 
 # Uncomment to override individual theme values:
@@ -12,7 +12,7 @@ transition = "fade"  # global default: fade | slide | zoom | none (or any plugin
 [[slide]]
 id = "intro"
 layout = "title"
-transition = "fade"
+transition = "zoom"
 
   [slide.content]
   heading = "Hello World"

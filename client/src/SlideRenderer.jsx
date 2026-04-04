@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { loadAnimation } from './AnimationLoader';
 import Animated from './Animated';
 import ModuleLoader from './ModuleLoader';
@@ -8,7 +8,7 @@ function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
   const ref = useRef(null);
   const firedRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!triggerAnim || firedRef.current || !animate || !ref.current) return;
     firedRef.current = true;
     loadAnimation(animate).then(fn => fn?.(ref.current, { delay }));

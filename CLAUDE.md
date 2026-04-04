@@ -205,35 +205,25 @@ Use as `animate = "my-anim"` or `heading_animate = "my-anim"` in TOML. No regist
 
 ### Custom transition plugin
 
-Create `client/src/transitions/my-transition.jsx`:
+Transitions are pure CSS. Add `.slide-enter--name` and `.slide-exit--name` classes to
+`client/src/index.css` (or any imported CSS file). Use `animation-fill-mode: both` so the
+`from` state is applied before the first paint (prevents flash).
 
-```jsx
-import { useEffect, useRef } from 'react';
+```css
+@keyframes flip-in  { from { transform: rotateY(90deg);  opacity: 0 } to { transform: rotateY(0);  opacity: 1 } }
+@keyframes flip-out { from { transform: rotateY(0);  opacity: 1 } to { transform: rotateY(-90deg); opacity: 0 } }
 
-export default function MyTransition({ entering, exiting, direction, onExited }) {
-  const exitRef = useRef(null);
-  const enterRef = useRef(null);
-
-  useEffect(() => {
-    // Animate exitRef.current out, enterRef.current in.
-    // Must call onExited() when the exit animation finishes.
-    const anim = exitRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
-    enterRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 });
-    if (anim) anim.onfinish = () => onExited?.();
-    else onExited?.();
-    return () => anim?.cancel();
-  }, []);
-
-  return (
-    <>
-      <div ref={exitRef} className="transition-layer">{exiting}</div>
-      <div ref={enterRef} className="transition-layer">{entering}</div>
-    </>
-  );
-}
+.slide-enter--flip { animation: flip-in  500ms ease both; }
+.slide-exit--flip  { animation: flip-out 500ms ease both; }
 ```
 
-Use as `transition = "my-transition"` in TOML. No registration needed.
+For direction-aware transitions, also define `.dir-forward` and `.dir-backward` variants:
+```css
+.slide-enter--slide.dir-forward  { animation: ... }
+.slide-enter--slide.dir-backward { animation: ... }
+```
+
+Use as `transition = "flip"` in TOML. No registration needed.
 
 ---
 

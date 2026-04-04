@@ -24,6 +24,32 @@ html, body, #root {
   font-family: var(--font-sans);
 }
 
+/* --- Slide transitions
+     animation-fill-mode: both = backwards (from-state before start) + forwards (to-state after end)
+     The 'backwards' fill is what prevents the entering slide from flashing visible before the
+     animation starts — the browser applies 'from' values on the very first frame.
+     To add a custom transition, define .slide-enter--name and .slide-exit--name classes here.
+--- */
+@keyframes _fade-in    { from { opacity: 0 }              to { opacity: 1 }              }
+@keyframes _fade-out   { from { opacity: 1 }              to { opacity: 0 }              }
+@keyframes _zoom-in    { from { transform: scale(1.04); opacity: 0 } to { transform: scale(1);    opacity: 1 } }
+@keyframes _zoom-out   { from { transform: scale(1);    opacity: 1 } to { transform: scale(0.94); opacity: 0 } }
+@keyframes _slide-l-in  { from { transform: translateX(48px);  opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes _slide-r-in  { from { transform: translateX(-48px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes _slide-l-out { from { transform: translateX(0); opacity: 1 } to { transform: translateX(-48px); opacity: 0 } }
+@keyframes _slide-r-out { from { transform: translateX(0); opacity: 1 } to { transform: translateX(48px);  opacity: 0 } }
+
+.slide-enter--fade { animation: _fade-in  350ms ease both; }
+.slide-exit--fade  { animation: _fade-out 350ms ease both; }
+
+.slide-enter--zoom { animation: _zoom-in  700ms ease both; }
+.slide-exit--zoom  { animation: _zoom-out 700ms ease both; }
+
+.slide-enter--slide.dir-forward  { animation: _slide-l-in  300ms ease both; }
+.slide-enter--slide.dir-backward { animation: _slide-r-in  300ms ease both; }
+.slide-exit--slide.dir-forward   { animation: _slide-l-out 300ms ease both; }
+.slide-exit--slide.dir-backward  { animation: _slide-r-out 300ms ease both; }
+
 /* --- Presentation view --- */
 .presentation {
   width: 100%;
@@ -35,12 +61,11 @@ html, body, #root {
   background: var(--bg);
 }
 
-/* The transition-stage sizes to match the slide; plugins position layers inside it */
+/* The transition-stage fills the full viewport */
 .transition-stage {
   position: relative;
-  width: 90vw;
-  max-width: 1200px;
-  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: 100%;
 }
 
 /* Absolute layer for enter/exit overlap — used by transition plugins */
@@ -55,6 +80,7 @@ html, body, #root {
   height: 100%;
   max-width: none;
   aspect-ratio: unset;
+  border-radius: 0;
 }
 
 .slide {

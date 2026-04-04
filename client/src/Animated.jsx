@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { loadAnimation } from './AnimationLoader';
 
 /**
@@ -20,7 +20,7 @@ export default function Animated({ name, delay = 0, trigger = true, children }) 
   const ref = useRef(null);
   const firedRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!trigger || firedRef.current || !name || !ref.current) return;
     firedRef.current = true;
     loadAnimation(name).then(fn => fn?.(ref.current, { delay }));
