@@ -167,7 +167,9 @@ layout = "split"
   right_bullets = ["c", "d"]
 ```
 
-**image** — Full-slide image with optional heading and caption. Place files in `assets/`.
+> **Images and videos** — place files in an `assets/` folder in your project directory and reference them as `/assets/filename.ext`. The engine serves this folder and Vite proxies it, so files are available in the browser without any extra configuration.
+
+**image** — Full-slide image with optional heading and caption.
 ```toml
 [[slide]]
 id = "photo"
