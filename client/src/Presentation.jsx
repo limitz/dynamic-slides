@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { usePresentation } from './usePresentation';
+import { PresentationContext } from './PresentationContext';
 import SlideRenderer from './SlideRenderer';
 import Overview from './Overview';
 
 export default function Presentation() {
-  const { state, connected, next, prev, goTo } = usePresentation();
+  const { state, connected, next, prev, goTo, send } = usePresentation();
   const [overview, setOverview] = useState(false);
   const currentSlide = state.slides[state.currentIndex];
 
@@ -34,20 +35,22 @@ export default function Presentation() {
   }
 
   return (
-    <div className="presentation">
-      <div className="status">{connected ? '●' : '○'}</div>
-      <SlideRenderer slide={currentSlide} />
-      <div className="progress">
-        {state.slides.length > 0 && `${state.currentIndex + 1} / ${state.slides.length}`}
+    <PresentationContext.Provider value={{ state, connected, send, next, prev, goTo }}>
+      <div className="presentation">
+        <div className="status">{connected ? '●' : '○'}</div>
+        <SlideRenderer slide={currentSlide} />
+        <div className="progress">
+          {state.slides.length > 0 && `${state.currentIndex + 1} / ${state.slides.length}`}
+        </div>
+        {overview && (
+          <Overview
+            slides={state.slides}
+            currentIndex={state.currentIndex}
+            onSelect={handleOverviewSelect}
+            onClose={() => setOverview(false)}
+          />
+        )}
       </div>
-      {overview && (
-        <Overview
-          slides={state.slides}
-          currentIndex={state.currentIndex}
-          onSelect={handleOverviewSelect}
-          onClose={() => setOverview(false)}
-        />
-      )}
-    </div>
+    </PresentationContext.Provider>
   );
 }

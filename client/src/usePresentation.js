@@ -37,5 +37,5 @@ export function usePresentation() {
   const prev = useCallback(() => send({ type: 'PREV' }), [send]);
   const goTo = useCallback((index) => send({ type: 'GOTO', index }), [send]);
 
-  return { state, connected, next, prev, goTo };
+  return { state, connected, send, next, prev, goTo };
 }

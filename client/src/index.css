@@ -143,6 +143,28 @@ html, body, #root {
   opacity: 0.4;
 }
 
+/* --- Custom modules --- */
+.module-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: #2a0a0a;
+  border: 1px solid #5a1a1a;
+  border-radius: 6px;
+  max-width: 600px;
+  width: 100%;
+}
+.module-error strong { color: #ff6b6b; }
+.module-error code {
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  opacity: 0.8;
+  font-family: monospace;
+}
+.module-loading { opacity: 0.4; font-size: 1rem; }
+.slide__module-label { font-size: 0.5em; opacity: 0.4; font-family: monospace; }
+
 /* --- Controller view --- */
 .controller {
   max-width: 480px;

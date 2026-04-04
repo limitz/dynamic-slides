@@ -35,6 +35,16 @@ transition = "slide"
   notes = "Use this layout for comparisons."
 
 [[slide]]
+id = "counter-demo"
+layout = "custom"
+module = "modules/Counter.jsx"
+
+  [slide.content]
+  heading = "Interactive Counter"
+  start = 0
+  notes = "Demo of a custom module. Click +/- or reset."
+
+[[slide]]
 id = "fin"
 layout = "title"
 

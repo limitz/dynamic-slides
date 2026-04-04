@@ -1,3 +1,5 @@
+import ModuleLoader from './ModuleLoader';
+
 function Bullets({ items }) {
   if (!items?.length) return null;
   return (
@@ -47,6 +49,15 @@ export default function SlideRenderer({ slide, mini = false }) {
             {slide.content?.right && <p>{slide.content.right}</p>}
             <Bullets items={slide.content?.right_bullets} />
           </div>
+        </div>
+      );
+    case 'custom':
+      return (
+        <div className={cls}>
+          {!mini && <ModuleLoader path={slide.module} slide={slide} />}
+          {mini && (
+            <div className="slide__module-label">{slide.module || 'custom'}</div>
+          )}
         </div>
       );
     case 'blank':
