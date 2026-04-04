@@ -6,6 +6,9 @@ const projectDir = process.env.SLIDES_PROJECT_DIR || process.cwd();
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __PROJECT_DIR__: JSON.stringify(projectDir),
+  },
   resolve: {
     alias: {
       '@project': resolve(projectDir),

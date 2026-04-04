@@ -3,6 +3,7 @@ import { loadAnimation } from './AnimationLoader';
 import Animated from './Animated';
 import ModuleLoader from './ModuleLoader';
 import LayoutLoader from './LayoutLoader';
+import { md, mdi } from './md';
 
 // Animates a <li> directly (can't wrap li in a div without breaking list semantics)
 function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
@@ -23,9 +24,8 @@ function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
     <li
       ref={ref}
       style={(!visible || animate) ? { opacity: 0, pointerEvents: visible ? undefined : 'none' } : undefined}
-    >
-      {text}
-    </li>
+      dangerouslySetInnerHTML={{ __html: mdi(text) }}
+    />
   );
 }
 
@@ -62,7 +62,9 @@ function Bullets({ items, step = Infinity }) {
 // Wrap a heading/body element with an optional entrance animation
 function El({ tag: Tag, content, animate, delay, className }) {
   if (!content) return null;
-  const el = <Tag className={className}>{content}</Tag>;
+  const isBlock = Tag === 'p' || Tag === 'div';
+  const html = isBlock ? md(content) : mdi(content);
+  const el = <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
   if (!animate) return el;
   return <Animated name={animate} delay={delay}>{el}</Animated>;
 }
@@ -157,7 +159,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity, me
               />
             </div>
           )}
-          {c.caption && <p className="slide__caption">{c.caption}</p>}
+          {c.caption && <p className="slide__caption" dangerouslySetInnerHTML={{ __html: mdi(c.caption) }} />}
           {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
@@ -179,7 +181,7 @@ export default function SlideRenderer({ slide, mini = false, step = Infinity, me
               />
             </div>
           )}
-          {c.caption && <p className="slide__caption">{c.caption}</p>}
+          {c.caption && <p className="slide__caption" dangerouslySetInnerHTML={{ __html: mdi(c.caption) }} />}
           {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
         </div>
       );
