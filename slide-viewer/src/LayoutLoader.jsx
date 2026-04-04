@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ErrorBoundary from './ErrorBoundary';
+import { md, mdi } from './md';
 
 // Built-in layouts (drop files in src/layouts/ to add them)
 const builtinMap = import.meta.glob('./layouts/**/*.{jsx,tsx}');
@@ -54,7 +55,7 @@ export default function LayoutLoader({ layout, slide, step, meta, slideNum, tota
 
   return (
     <ErrorBoundary key={layout}>
-      <Component slide={slide} step={step} meta={meta} slideNum={slideNum} total={total} mini={mini} />
+      <Component slide={slide} step={step} meta={meta} slideNum={slideNum} total={total} mini={mini} md={md} mdi={mdi} />
     </ErrorBoundary>
   );
 }
