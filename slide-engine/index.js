@@ -201,10 +201,16 @@ function broadcast(msg) {
 }
 
 // --- File watcher ---
-chokidar.watch(SCRIPT_PATH, { ignoreInitial: true }).on('change', () => {
-  console.log('Script changed, reloading...');
-  loadScript();
-  broadcast({ type: 'STATE', state });
+const watchPaths = [SCRIPT_PATH, resolve(projectDir, 'slides.css')];
+chokidar.watch(watchPaths, { ignoreInitial: true }).on('change', (file) => {
+  if (file.endsWith('slides.css')) {
+    console.log('slides.css changed, reloading CSS...');
+    broadcast({ type: 'RELOAD_CSS' });
+  } else {
+    console.log('Script changed, reloading...');
+    loadScript();
+    broadcast({ type: 'STATE', state });
+  }
 });
 
 server.listen(PORT, '0.0.0.0', () => {

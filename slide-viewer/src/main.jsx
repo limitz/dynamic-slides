@@ -11,6 +11,18 @@ link.rel = 'stylesheet';
 link.href = '/api/slides.css';
 document.head.appendChild(link);
 
+// Hot-reload slides.css when the engine signals it changed.
+const WS_URL = (import.meta.env.VITE_SERVER_URL || 'http://localhost:3001').replace(/^http/, 'ws');
+function connectCssWatcher() {
+  const ws = new WebSocket(WS_URL);
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'RELOAD_CSS') link.href = `/api/slides.css?t=${Date.now()}`;
+  };
+  ws.onclose = () => setTimeout(connectCssWatcher, 2000);
+}
+connectCssWatcher();
+
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <Routes>
