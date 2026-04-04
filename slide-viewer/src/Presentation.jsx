@@ -76,11 +76,13 @@ export default function Presentation() {
       if (!overview) {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
         if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   prev();
+        if (e.key === 'PageDown') goTo(Math.min(state.slides.length - 1, state.currentIndex + 1));
+        if (e.key === 'PageUp')   goTo(Math.max(0, state.currentIndex - 1));
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [next, prev, overview]);
+  }, [next, prev, goTo, overview, state.currentIndex, state.slides.length]);
 
   function toggleFullscreen() {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
