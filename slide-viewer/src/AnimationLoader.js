@@ -5,7 +5,8 @@ const cache = {};
 
 /**
  * Load an animation plugin by name.
- * Returns a function: (el, { delay }) => void
+ * Returns { keyframes, options } for declarative animations,
+ * or a function (el, { delay }) => void for legacy plugins.
  * Returns null if the plugin isn't found.
  */
 export async function loadAnimation(name) {

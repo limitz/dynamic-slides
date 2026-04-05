@@ -1,6 +1,7 @@
-export default function fadeIn(el, { delay = 0 } = {}) {
-  el.animate(
-    [{ opacity: 0 }, { opacity: 1 }],
-    { duration: 400, delay, easing: 'ease', fill: 'backwards' }
-  );
-}
+export default {
+  keyframes: [
+    { opacity: 0 },
+    { opacity: 1 },
+  ],
+  options: { duration: 400, easing: 'ease' },
+};

@@ -186,13 +186,15 @@ async function captureFingerprint(page) {
       const computed = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
 
-      // Skip elements that are not rendered
+      // Skip elements that are not rendered or effectively invisible.
+      // Only fingerprint what the audience can see — hidden elements
+      // may take different layout space between forward and backward
+      // passes, but that's cosmetically irrelevant.
       if (computed.display === 'none') continue;
-
-      // Snap opacity to 0 or 1 for effectively-hidden/visible elements
-      // to avoid capturing mid-animation fractional values
       const rawOpacity = parseFloat(computed.opacity);
-      const opacity = rawOpacity < 0.01 ? 0 : rawOpacity > 0.99 ? 1 : Math.round(rawOpacity * 100) / 100;
+      if (rawOpacity < 0.1) continue; // invisible to the audience
+
+      const opacity = rawOpacity > 0.99 ? 1 : Math.round(rawOpacity * 100) / 100;
 
       elements.push({
         tag: el.tagName,

@@ -4,37 +4,57 @@ import LayoutLoader from './LayoutLoader';
 import ModuleLoader from './ModuleLoader';
 
 /**
- * Animate an element using the Web Animation API.
- * Expects opacity:0 as initial state for enter animations.
- * All animations use fill:'forwards' — no snap-back.
+ * Reversible animation hook using the Web Animation API.
+ *
+ * Animation plugins export { keyframes, options }. The hook plays keyframes
+ * forward when trigger becomes true, and plays them reversed when trigger
+ * becomes false. After the reverse animation finishes it is cancelled so the
+ * element reverts to its inline styles — exactly matching its initial state.
+ *
+ * Legacy function-based plugins are still supported (fire-and-forget).
  */
 function useAnimation(ref, animation, trigger) {
   const firedRef = useRef(false);
-  const animsRef = useRef([]);
+  const animRef = useRef(null);
 
   useLayoutEffect(() => {
     if (!animation || !ref.current) return;
+    const el = ref.current;
 
-    if (trigger && !firedRef.current) {
-      // Fire the animation
-      firedRef.current = true;
-      const el = ref.current;
-      const before = el.getAnimations();
-      loadAnimation(animation.name).then(fn => {
-        if (!fn || !ref.current) return;
-        fn(ref.current, { delay: animation.delay || 0 });
-        // Track new animations so we can cancel them on revert
-        animsRef.current = el.getAnimations().filter(a => !before.includes(a));
-      });
-    } else if (!trigger && firedRef.current) {
-      // Trigger reverted (e.g. backward navigation) — cancel the animation
-      // so its fill effect doesn't persist
-      for (const a of animsRef.current) {
-        a.cancel();
+    loadAnimation(animation.name).then(plugin => {
+      if (!plugin || !ref.current) return;
+
+      if (typeof plugin === 'function') {
+        // Legacy function-based animation (fire-and-forget)
+        if (trigger && !firedRef.current) {
+          firedRef.current = true;
+          plugin(el, { delay: animation.delay || 0 });
+        }
+        return;
       }
-      animsRef.current = [];
-      firedRef.current = false;
-    }
+
+      // Declarative animation with auto-reverse
+      const { keyframes, options } = plugin;
+
+      if (trigger && !firedRef.current) {
+        // Forward: play animation (hidden → visible)
+        firedRef.current = true;
+        if (animRef.current) animRef.current.cancel();
+        animRef.current = el.animate(keyframes, {
+          ...options, delay: animation.delay || 0, fill: 'both',
+        });
+      } else if (!trigger && firedRef.current) {
+        // Backward: play reverse (visible → hidden), then cancel on finish
+        // so the element reverts to its inline styles (same as never-animated)
+        firedRef.current = false;
+        if (animRef.current) animRef.current.cancel();
+        const reverse = el.animate([...keyframes].reverse(), {
+          ...options, delay: 0, fill: 'both',
+        });
+        reverse.addEventListener('finish', () => reverse.cancel(), { once: true });
+        animRef.current = reverse;
+      }
+    });
   }, [trigger]);
 }
 
