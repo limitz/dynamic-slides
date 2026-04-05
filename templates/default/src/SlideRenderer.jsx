@@ -10,14 +10,31 @@ import ModuleLoader from './ModuleLoader';
  */
 function useAnimation(ref, animation, trigger) {
   const firedRef = useRef(false);
+  const animsRef = useRef([]);
 
   useLayoutEffect(() => {
-    if (!trigger || firedRef.current || !animation || !ref.current) return;
-    firedRef.current = true;
-    loadAnimation(animation.name).then(fn => {
-      if (!fn || !ref.current) return;
-      fn(ref.current, { delay: animation.delay || 0 });
-    });
+    if (!animation || !ref.current) return;
+
+    if (trigger && !firedRef.current) {
+      // Fire the animation
+      firedRef.current = true;
+      const el = ref.current;
+      const before = el.getAnimations();
+      loadAnimation(animation.name).then(fn => {
+        if (!fn || !ref.current) return;
+        fn(ref.current, { delay: animation.delay || 0 });
+        // Track new animations so we can cancel them on revert
+        animsRef.current = el.getAnimations().filter(a => !before.includes(a));
+      });
+    } else if (!trigger && firedRef.current) {
+      // Trigger reverted (e.g. backward navigation) — cancel the animation
+      // so its fill effect doesn't persist
+      for (const a of animsRef.current) {
+        a.cancel();
+      }
+      animsRef.current = [];
+      firedRef.current = false;
+    }
   }, [trigger]);
 }
 
