@@ -4,46 +4,27 @@ import LayoutLoader from './LayoutLoader';
 import ModuleLoader from './ModuleLoader';
 
 /**
- * Animate an element using the Web Animation API.
- *
- * Animation plugins export { keyframes, options }. The hook plays keyframes
- * forward when trigger becomes true. When trigger reverts (backward
- * navigation), the animation is cancelled instantly — React's inline styles
- * (display:none) take over, so the element leaves the layout cleanly.
- *
- * Legacy function-based plugins are still supported (fire-and-forget).
+ * Play an enter animation once when trigger becomes true.
+ * Animation plugins export { keyframes, options }.
+ * Legacy function plugins are also supported.
  */
 function useAnimation(ref, animation, trigger) {
   const firedRef = useRef(false);
-  const animRef = useRef(null);
 
   useLayoutEffect(() => {
-    if (!animation || !ref.current) return;
-    const el = ref.current;
+    if (!trigger || firedRef.current || !animation || !ref.current) return;
+    firedRef.current = true;
 
     loadAnimation(animation.name).then(plugin => {
       if (!plugin || !ref.current) return;
+      const el = ref.current;
 
       if (typeof plugin === 'function') {
-        if (trigger && !firedRef.current) {
-          firedRef.current = true;
-          plugin(el, { delay: animation.delay || 0 });
-        }
-        return;
-      }
-
-      const { keyframes, options } = plugin;
-
-      if (trigger && !firedRef.current) {
-        firedRef.current = true;
-        if (animRef.current) animRef.current.cancel();
-        animRef.current = el.animate(keyframes, {
-          ...options, delay: animation.delay || 0, fill: 'both',
+        plugin(el, { delay: animation.delay || 0 });
+      } else {
+        el.animate(plugin.keyframes, {
+          ...plugin.options, delay: animation.delay || 0, fill: 'both',
         });
-      } else if (!trigger && firedRef.current) {
-        firedRef.current = false;
-        if (animRef.current) animRef.current.cancel();
-        animRef.current = null;
       }
     });
   }, [trigger]);
