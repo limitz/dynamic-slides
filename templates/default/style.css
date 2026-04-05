@@ -58,12 +58,14 @@ html, body, #root {
   justify-content: center;
   position: relative;
   background: var(--bg);
+  overflow: hidden;
 }
 
 .transition-stage {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .transition-layer {
