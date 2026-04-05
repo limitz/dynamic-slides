@@ -2,10 +2,17 @@
   "name": "dynamic-slides",
   "version": "0.2.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "setup": "bash setup.sh",
     "engine": "node slide-engine/index.js",
     "viewer": "npx vite",
-    "dev": "npm run engine & npm run viewer"
+    "dev": "npm run engine & npm run viewer",
+    "test": "node tools/ds-test.js",
+    "test:verbose": "node tools/ds-test.js --verbose",
+    "test:screenshot": "node tools/ds-test.js --screenshot --verbose"
+  },
+  "devDependencies": {
+    "playwright": "^1.59.1"
   }
 }
