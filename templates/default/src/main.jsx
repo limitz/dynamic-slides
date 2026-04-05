@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Presentation from '@viewer/Presentation';
-import Controller from '@viewer/Controller';
-import './style.css';
+import Presentation from './Presentation';
+import Controller from './Controller';
+import '../style.css';
 
-// Inject style.css via engine for hot-reload
+// Hot-reload style.css when the engine signals it changed
 const link = document.createElement('link');
 link.rel = 'stylesheet';
 link.href = '/api/style.css';

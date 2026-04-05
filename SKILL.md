@@ -1,11 +1,11 @@
 ---
 name: dynamic-slides
-description: Skill for authoring and controlling slide presentations. Use this skill whenever the user asks to create, edit, or control a slide presentation, navigate slides, change themes, add or remove slides, modify slide content, start or stop the presentation server, or anything related to presenting. Also triggers for "go to slide", "next slide", "add a slide about X", "change the theme", "start the presentation", etc.
+description: Skill for authoring and controlling slide presentations. Use this skill whenever the user asks to create, edit, or control a slide presentation, navigate slides, add or remove slides, modify slide content, start or stop the presentation server, or anything related to presenting. Also triggers for "go to slide", "next slide", "add a slide about X", "start the presentation", etc.
 ---
 
 # Dynamic Slides
 
-You are controlling a presentation tool. The tool code lives at `${CLAUDE_SKILL_DIR}`. The user's presentation data (`presentation.toml` and custom modules) lives in the user's **current working directory**.
+You are controlling a presentation tool. The tool code lives at `${CLAUDE_SKILL_DIR}`. The user's presentation lives in their **current working directory** as a Markdown file (`script.md`).
 
 ## First-Time Setup
 
@@ -17,41 +17,102 @@ bash ${CLAUDE_SKILL_DIR}/setup.sh
 
 ## Project Directory Structure
 
-The user's working directory can contain:
+When starting a new presentation, copy the default template to the user's project dir and install dependencies:
+
+```bash
+cp -r ${CLAUDE_SKILL_DIR}/templates/default/* "$(pwd)"/
+npm install
+```
+
+This gives the user a self-contained project:
 
 ```
 my-project/
-├── presentation.toml       # slide content (required)
-├── slides.css              # custom transition CSS (optional)
-├── animations/             # custom animation plugins (optional)
+├── index.html          # Vite entry (do not edit)
+├── vite.config.js      # Vite config (do not edit)
+├── src/                # viewer source (do not edit)
+├── style.css           # template stylesheet (user edits this)
+├── script.md           # presentation content (required)
+├── layouts/            # JSX layout components (optional)
+│   └── my-layout.jsx
+├── animations/         # animation plugins (optional)
 │   └── my-anim.js
-├── modules/                # custom React components (optional)
+├── modules/            # custom React components (optional)
 │   └── MyChart.jsx
-└── assets/                 # images, videos, etc. (optional)
-    └── logo.png            # referenced as /assets/logo.png in content
+└── assets/             # images, videos, etc. (optional)
+    └── logo.png
 ```
 
-The tool loads from the user's project first, falling back to built-ins.
+## Script Format (Markdown)
 
-## Creating a Presentation
+The presentation is written in Markdown with `{key=value .class #id}` attributes (Pandoc-style). Parsed with markdown-it + markdown-it-attrs.
 
-If there is no `presentation.toml` in the user's working directory, create one with a starter template:
+### Structure
 
-```toml
-[meta]
-title = "Title"
-author = "Name"
-theme = "dark"          # dark | light | terminal | paper
-transition = "fade"     # fade | slide | zoom | none
-duration = 10           # max duration in minutes (shown in controller)
-warn_before = 2         # warn this many minutes before end
+- `# Title {author=Name date=2024-01-01}` — Presentation title + meta (all attributes become key/value pairs)
+- `## Slide Title {layout=name enter=fade@500 exit=zoom .classname}` — Slide boundary
+- `<!-- Speaker notes here -->` — Notes (HTML comment right after `##`)
+- `### Section Header {#element-id reveal=0 enter=fade-up@200}` — Section within slide
+- `### {#id}` — Headerless section (entire heading is just attributes)
+- `* Bullet text {enter=fade reveal=1 exit=fade-out dismiss=3}` — Bullets (attributes at END)
+- `--- {reveal=3}` — Paragraph separator with reveal
 
-[[slide]]
-id = "intro"
-layout = "title"
-  [slide.content]
-  heading = "Title"
-  subheading = "Subtitle"
+### Attributes
+
+| Attribute | Where | Description |
+|-----------|-------|-------------|
+| `layout=name` | `##`, `###` | Layout component to use (default, title, twocols, image, blank) |
+| `#id` | `###` | Element ID for layout slot targeting (dot-notation for nesting: `#body.col1`) |
+| `.classname` | `##`, `###`, `*` | CSS class |
+| `enter=name@delay` | `##`, `###`, `*` | Enter animation (e.g. `fade-up@200`) |
+| `exit=name@delay` | `##`, `###`, `*` | Exit animation |
+| `reveal=N` | `###`, `*`, `---` | Show at reveal step N (`reveal=0` = show when slide enters) |
+| `dismiss=M` | `###`, `*` | Start exit animation at step M (defaults to `reveal+1`) |
+| `module=Name` | `##`, `###` | Load a custom React module |
+
+### Transition Rules
+
+- Enter transition: element starts at `opacity: 0`, animation brings it in
+- Exit transition: animates element out (typically to invisible)
+- All transitions retain final state (`fill: 'forwards'`) — no snap-back
+- Elements without transitions are simply visible/hidden based on reveal step
+
+### Example Script
+
+```markdown
+# My Presentation {author=wipkat date=2024-01-01}
+
+## Welcome {layout=title enter=fade}
+
+<!-- Welcome everyone to the talk -->
+
+### {#heading reveal=0 enter=fade-up}
+
+A presentation tool built with Claude
+
+## What We'll Cover {enter=fade}
+
+### {#body reveal=0}
+
+* First topic {enter=fade-up}
+* Second topic {enter=fade-up reveal=1}
+* Third topic {enter=fade-up reveal=2}
+
+## Two Columns {layout=twocols enter=zoom}
+
+### {#left reveal=0 enter=fade}
+
+Left side content here.
+
+### {#right reveal=1 enter=fade}
+
+Right side content here.
+
+## Thank You {layout=title enter=fade}
+
+### {#heading reveal=0 enter=fade-up}
+
+Questions?
 ```
 
 ## Quick Start
@@ -62,14 +123,12 @@ Check if the engine is already running:
 node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state
 ```
 
-If it errors, start the stack. Run these two commands (the viewer must be started from its own directory):
+If it errors, start the stack from the user's project directory:
 
 ```bash
-SCRIPT="$(pwd)/presentation.toml" nohup node ${CLAUDE_SKILL_DIR}/slide-engine/index.js > /dev/null 2>&1 &
-SLIDES_PROJECT_DIR="$(pwd)" nohup npx --prefix ${CLAUDE_SKILL_DIR}/slide-viewer vite --config ${CLAUDE_SKILL_DIR}/slide-viewer/vite.config.js > /dev/null 2>&1 &
+SCRIPT="$(pwd)/script.md" nohup node ${CLAUDE_SKILL_DIR}/slide-engine/index.js > /dev/null 2>&1 &
+nohup npx vite > /dev/null 2>&1 &
 ```
-
-> **Note:** The viewer command must be run with the working directory set to `${CLAUDE_SKILL_DIR}/slide-viewer`, otherwise Vite cannot find `index.html` and returns 404. Use `cd ${CLAUDE_SKILL_DIR}/slide-viewer &&` before the viewer command if needed, or verify with `curl -s http://localhost:5173 | head -1` — a successful start returns `<!doctype html>`, not an empty response.
 
 - Presentation: http://localhost:5173
 - Controller: http://localhost:5173/controller
@@ -77,10 +136,10 @@ SLIDES_PROJECT_DIR="$(pwd)" nohup npx --prefix ${CLAUDE_SKILL_DIR}/slide-viewer 
 ## Controlling the Presentation
 
 ```bash
-node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state          # get current slide + total
-node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js next           # advance one step (fragment or slide)
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js state          # get current slide info
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js next           # advance one step (reveal or slide)
 node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js prev           # go back one step
-node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js goto <id>      # jump to slide by id
+node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js goto <index>   # jump to slide by index (0-based)
 node ${CLAUDE_SKILL_DIR}/tools/ds-ctl.js reload         # force reload from disk
 ```
 
@@ -88,173 +147,74 @@ When the user says "next", "go to slide X", "previous", etc., run the correspond
 
 ## Editing the Presentation
 
-Edit `presentation.toml` in the user's working directory. The engine watches it and the browser updates automatically — no restart needed.
+Edit `script.md` in the user's working directory. The engine watches it and the browser updates automatically — no restart needed.
 
-### Meta + Theme
+The `style.css` file is also watched — CSS changes hot-reload without restarting.
 
-```toml
-[meta]
-title = "Title"
-author = "Name"
-theme = "dark"          # dark | light | terminal | paper
-transition = "fade"     # fade | slide | zoom | none
-duration = 10           # max duration in minutes (shown in controller)
-warn_before = 2         # warn this many minutes before end
-```
+## Layouts
 
-### Slide Layouts
+Built-in layouts (JSX components in `layouts/` dir):
 
-Every slide needs an `id` (used by goto) and a `layout`.
+| Layout | Slots | Description |
+|--------|-------|-------------|
+| `default` | any | Renders all sections in order |
+| `title` | `heading`, `subheading` | Centered title slide |
+| `twocols` | `left`/`col1`, `right`/`col2` | Two-column layout |
+| `image` | any | Full-bleed image layout |
+| `blank` | none | Empty slide |
 
-**title** — Big heading + subtitle. Use for opening/closing slides.
-```toml
-[[slide]]
-id = "intro"
-layout = "title"
-  [slide.content]
-  heading = "Main heading"
-  subheading = "Subtitle"
-  heading_animate = "fade-up"
-  subheading_animate = "fade-up"
-  notes = "Speaker notes for controller view"
-```
+Custom layouts go in the project's `layouts/` dir as JSX files:
 
-**content** — Heading + body text + optional bullets.
-```toml
-[[slide]]
-id = "topic-1"
-layout = "content"
-  [slide.content]
-  heading = "Heading"
-  body = "Paragraph text"
-  body_animate = "fade-up"
-  bullets = ["Point A", "Point B"]
-```
-
-**bullets** — Heading + bullet list. Supports fragment reveals.
-```toml
-[[slide]]
-id = "agenda"
-layout = "bullets"
-  [slide.content]
-  heading = "Agenda"
-
-  [[slide.content.bullets]]
-  text = "Visible immediately"
-  animate = "fade-up"
-
-  [[slide.content.bullets]]
-  text = "Revealed on next press"
-  animate = "fade-up"
-  fragment = true
-
-  [[slide.content.bullets]]
-  text = "Revealed on second next press"
-  animate = "fade-up"
-  fragment = true
-```
-
-**split** — Two columns. Heading spans both columns.
-```toml
-[[slide]]
-id = "compare"
-layout = "split"
-  [slide.content]
-  heading = "Comparison"
-  left = "Left column text"
-  right = "Right column text"
-  left_bullets = ["a", "b"]
-  right_bullets = ["c", "d"]
-```
-
-> **Images and videos** — place files in an `assets/` folder in your project directory and reference them as `/assets/filename.ext`. The engine serves this folder and Vite proxies it, so files are available in the browser without any extra configuration.
-
-**image** — Full-slide image with optional heading and caption.
-```toml
-[[slide]]
-id = "photo"
-layout = "image"
-  [slide.content]
-  src = "/assets/photo.jpg"
-  alt = "Description"
-  heading = "Optional heading"
-  caption = "Optional caption"
-  fit = "contain"    # contain | cover (default: contain)
-```
-
-**video** — Full-slide video with optional heading and caption.
-```toml
-[[slide]]
-id = "demo"
-layout = "video"
-  [slide.content]
-  src = "/assets/demo.mp4"
-  heading = "Optional heading"
-  caption = "Optional caption"
-  autoplay = true    # default: false
-  loop = false       # default: false
-  muted = true       # default: true
-  controls = true    # default: false
-```
-
-Images can also appear inside **split** columns using `left_image` / `right_image`:
-```toml
-[[slide]]
-id = "compare"
-layout = "split"
-  [slide.content]
-  heading = "Before & After"
-  left_image = "/assets/before.jpg"
-  right_image = "/assets/after.jpg"
-```
-
-**blank** — Empty slide.
-
-**custom layouts** — Any unrecognised `layout` value is loaded as a React component from `layouts/` in the project directory (falling back to `${CLAUDE_SKILL_DIR}/slide-viewer/src/layouts/`).
-
-```
-my-project/
-└── layouts/
-    └── my-layout.jsx   # used with layout = "my-layout"
-```
-
-A layout component receives these props:
 ```jsx
-export default function MyLayout({ slide, step, meta, slideNum, total, mini }) {
-  const c = slide.content || {};
+export default function MyLayout({ slots }) {
   return (
-    <div className={`slide slide--my-layout${mini ? ' slide--mini' : ''}`}>
-      <h2>{c.heading}</h2>
-      {/* ...custom content... */}
+    <div className="layout-my">
+      {slots.header}
+      <div className="content">{slots.body}</div>
     </div>
   );
 }
 ```
 
-**custom** — React component from `${CLAUDE_SKILL_DIR}/slide-viewer/src/modules/`.
-```toml
-[[slide]]
-id = "demo"
-layout = "custom"
-module = "modules/MyComponent.jsx"
-  [slide.content]
-  some_data = "passed as props"
+Nested layouts use dot-notation: `### {#body.col1}` targets the `col1` slot inside the `body` layout.
+
+## Animations
+
+Enter animations: `fade-in`, `fade-up`, `slide-up`
+Exit animations: `fade-out`, `fade-down`, `slide-down`
+
+Use the `@delay` suffix for staggering: `enter=fade-up@200`
+
+Custom animations go in `animations/` as JS files exporting a function:
+
+```js
+export default function myAnim(el, { delay = 0 } = {}) {
+  el.animate(
+    [{ opacity: 0 }, { opacity: 1 }],
+    { duration: 400, delay, easing: 'ease', fill: 'forwards' }
+  );
+}
 ```
 
-### Animations
+All animations must use `fill: 'forwards'` and expect `opacity: 0` as initial state.
 
-Element entrance animations: `fade-up`, `fade-in`, `slide-up`. Apply with `heading_animate`, `body_animate`, `animate` on bullets. Use `delay` (ms) to stagger.
+## Modules
 
-Slide transitions: `fade`, `slide`, `zoom`, `none`. Set globally in `[meta]` or per-slide with `transition = "zoom"`.
+Custom interactive components go in `modules/` as JSX files:
 
-### Fragments
+```jsx
+export default function MyModule({ slide, section }) {
+  return <div>Interactive content here</div>;
+}
+```
 
-Bullets with `fragment = true` are revealed one at a time on "next" press before advancing to the next slide. Non-fragment bullets appear immediately when the slide loads.
+Invoke at slide level: `## Title {layout=custom module=MyModule}`
+Invoke at section level: `### {#id module=MyModule}`
 
 ## Workflow Tips
 
-- When the user asks to "add a slide about X", append a `[[slide]]` block to `presentation.toml` in the user's working directory.
-- When the user asks to change content, read `presentation.toml` first, find the relevant slide by id, and edit it.
-- When the user says "go to slide 3", use `goto` with the slide's id (read the toml to find it).
+- When the user asks to "add a slide about X", append a `## Slide` block to `script.md`.
+- When the user asks to change content, read `script.md` first, find the relevant slide, and edit it.
+- When the user says "go to slide 3", use `goto 2` (0-based index).
 - Always confirm navigation by running `state` after.
 - The footer on each slide automatically shows title, author, date, and slide number.

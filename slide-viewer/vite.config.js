@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// This config is only used if the viewer is run directly (development/testing).
-// In production, the project dir's vite.config.js is the entry point.
+// This config is only for developing the viewer itself.
+// Presentations run from the project dir's own vite.config.js.
 export default defineConfig({
   plugins: [react()],
   server: {
