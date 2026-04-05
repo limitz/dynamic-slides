@@ -1,35 +1,32 @@
 import { useState, useEffect } from 'react';
 import ErrorBoundary from './ErrorBoundary';
-import { md, mdi } from './md';
 
-// Built-in layouts (drop files in src/layouts/ to add them)
-const builtinMap = import.meta.glob('./layouts/**/*.{jsx,tsx}');
-
-// User layouts from project directory
-const projectMap = import.meta.glob('@project/layouts/**/*.{jsx,tsx}');
+// Layout components from project directory (resolved via Vite glob)
+const layoutMap = import.meta.glob('./layouts/**/*.{jsx,tsx}');
 
 function findLoader(map, name) {
-  // Accept "my-layout", "layouts/my-layout.jsx", etc.
   for (const [key, loader] of Object.entries(map)) {
-    if (key.endsWith(`/${name}.jsx`) || key.endsWith(`/${name}.tsx`) || key.endsWith(`/${name}`)) {
+    if (key.endsWith(`/${name}.jsx`) || key.endsWith(`/${name}.tsx`)) {
       return loader;
     }
   }
   return null;
 }
 
-export default function LayoutLoader({ layout, slide, step, meta, slideNum, total, mini }) {
+export default function LayoutLoader({ layout, slots }) {
   const [Component, setComponent] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!layout) return;
+    if (!layout || layout === 'default') {
+      setComponent(null);
+      return;
+    }
 
-    // Try project layouts first, then built-in
-    const loader = findLoader(projectMap, layout) || findLoader(builtinMap, layout);
+    const loader = findLoader(layoutMap, layout);
 
     if (!loader) {
-      const available = [...Object.keys(projectMap), ...Object.keys(builtinMap)];
+      const available = Object.keys(layoutMap);
       setError(`Layout not found: "${layout}"\nAvailable: ${available.join(', ') || '(none)'}`);
       return;
     }
@@ -49,13 +46,14 @@ export default function LayoutLoader({ layout, slide, step, meta, slideNum, tota
     );
   }
 
+  // Default layout: just render all slots in order
   if (!Component) {
-    return <div className="module-loading">Loading layout "{layout}"…</div>;
+    return <>{Object.values(slots)}</>;
   }
 
   return (
     <ErrorBoundary key={layout}>
-      <Component slide={slide} step={step} meta={meta} slideNum={slideNum} total={total} mini={mini} md={md} mdi={mdi} />
+      <Component slots={slots} />
     </ErrorBoundary>
   );
 }

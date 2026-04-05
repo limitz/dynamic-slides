@@ -3,13 +3,13 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import chokidar from 'chokidar';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { parse } from 'smol-toml';
+import { parseScript } from './parse-script.js';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const SCRIPT_PATH = process.env.SCRIPT || resolve(process.cwd(), 'presentation.toml');
+const SCRIPT_PATH = process.env.SCRIPT || resolve(process.cwd(), 'script.md');
 const PORT = process.env.PORT || 3001;
 
 // --- State ---
@@ -18,15 +18,7 @@ let state = {
   currentIndex: 0,
   currentStep: 0,
   meta: {},
-  theme: {},
 };
-
-// Count fragment elements in a slide (bullets with fragment: true)
-function countFragments(slide) {
-  if (!slide) return 0;
-  const bullets = slide.content?.bullets || [];
-  return bullets.filter(b => typeof b === 'object' && b !== null && b.fragment).length;
-}
 
 // --- Script loading ---
 function loadScript() {
@@ -36,10 +28,9 @@ function loadScript() {
   }
   try {
     const raw = readFileSync(SCRIPT_PATH, 'utf-8');
-    const parsed = parse(raw);
-    state.slides = parsed.slide || [];
-    state.meta = parsed.meta || {};
-    state.theme = parsed.theme || {};
+    const parsed = parseScript(raw);
+    state.slides = parsed.slides;
+    state.meta = parsed.meta;
     state.currentStep = 0;
     console.log(`Loaded ${state.slides.length} slides from ${SCRIPT_PATH}`);
   } catch (err) {
@@ -57,9 +48,9 @@ app.use(express.json());
 const projectDir = dirname(SCRIPT_PATH);
 app.use('/assets', express.static(resolve(projectDir, 'assets')));
 
-// Serve project-level slides.css so the viewer can inject it after bundled CSS
-app.get('/slides.css', (req, res) => {
-  const cssPath = resolve(projectDir, 'slides.css');
+// Serve project-level style.css
+app.get('/style.css', (req, res) => {
+  const cssPath = resolve(projectDir, 'style.css');
   if (existsSync(cssPath)) {
     res.setHeader('Content-Type', 'text/css');
     res.sendFile(cssPath);
@@ -84,8 +75,8 @@ app.get('/state', (req, res) => {
 
 // POST /slide/next
 app.post('/slide/next', (req, res) => {
-  const fragments = countFragments(state.slides[state.currentIndex]);
-  if (state.currentStep < fragments) {
+  const maxStep = state.slides[state.currentIndex]?.maxStep || 0;
+  if (state.currentStep < maxStep) {
     state.currentStep++;
   } else if (state.currentIndex < state.slides.length - 1) {
     state.currentIndex++;
@@ -101,16 +92,18 @@ app.post('/slide/prev', (req, res) => {
     state.currentStep--;
   } else if (state.currentIndex > 0) {
     state.currentIndex--;
-    state.currentStep = countFragments(state.slides[state.currentIndex]);
+    state.currentStep = state.slides[state.currentIndex]?.maxStep || 0;
   }
   broadcast({ type: 'STATE', state });
   res.json({ currentIndex: state.currentIndex, currentStep: state.currentStep });
 });
 
-// POST /slide/:id
-app.post('/slide/:id', (req, res) => {
-  const idx = state.slides.findIndex(s => s.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Slide not found' });
+// POST /slide/:index — jump to slide by index
+app.post('/slide/:index', (req, res) => {
+  const idx = parseInt(req.params.index, 10);
+  if (isNaN(idx) || idx < 0 || idx >= state.slides.length) {
+    return res.status(404).json({ error: 'Slide not found' });
+  }
   state.currentIndex = idx;
   state.currentStep = 0;
   broadcast({ type: 'STATE', state });
@@ -161,8 +154,8 @@ wss.on('connection', (ws) => {
 function handleClientMessage(ws, msg) {
   switch (msg.type) {
     case 'NEXT': {
-      const fragments = countFragments(state.slides[state.currentIndex]);
-      if (state.currentStep < fragments) {
+      const maxStep = state.slides[state.currentIndex]?.maxStep || 0;
+      if (state.currentStep < maxStep) {
         state.currentStep++;
       } else if (state.currentIndex < state.slides.length - 1) {
         state.currentIndex++;
@@ -176,7 +169,7 @@ function handleClientMessage(ws, msg) {
         state.currentStep--;
       } else if (state.currentIndex > 0) {
         state.currentIndex--;
-        state.currentStep = countFragments(state.slides[state.currentIndex]);
+        state.currentStep = state.slides[state.currentIndex]?.maxStep || 0;
       }
       broadcast({ type: 'STATE', state });
       break;
@@ -201,10 +194,10 @@ function broadcast(msg) {
 }
 
 // --- File watcher ---
-const watchPaths = [SCRIPT_PATH, resolve(projectDir, 'slides.css')];
+const watchPaths = [SCRIPT_PATH, resolve(projectDir, 'style.css')];
 chokidar.watch(watchPaths, { ignoreInitial: true }).on('change', (file) => {
-  if (file.endsWith('slides.css')) {
-    console.log('slides.css changed, reloading CSS...');
+  if (file.endsWith('style.css')) {
+    console.log('style.css changed, reloading CSS...');
     broadcast({ type: 'RELOAD_CSS' });
   } else {
     console.log('Script changed, reloading...');

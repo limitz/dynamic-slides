@@ -6,7 +6,7 @@ export default function Overview({ slides, currentIndex, onSelect, onClose }) {
       <div className="overview__grid" onClick={(e) => e.stopPropagation()}>
         {slides.map((slide, i) => (
           <button
-            key={slide.id || i}
+            key={i}
             className={`overview__item ${i === currentIndex ? 'active' : ''}`}
             onClick={() => onSelect(i)}
           >
@@ -14,7 +14,7 @@ export default function Overview({ slides, currentIndex, onSelect, onClose }) {
               <SlideRenderer slide={slide} mini step={Infinity} />
             </div>
             <span className="overview__label">
-              {i + 1}{slide.id ? ` · ${slide.id}` : ''}
+              {i + 1}{slide.title ? ` \u00B7 ${slide.title}` : ''}
             </span>
           </button>
         ))}

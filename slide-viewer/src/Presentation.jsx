@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { usePresentation } from './usePresentation';
 import { PresentationContext } from './PresentationContext';
-import { useTheme } from './useTheme';
 import SlideRenderer from './SlideRenderer';
 import Overview from './Overview';
 
@@ -9,25 +8,22 @@ export default function Presentation() {
   const { state, connected, next, prev, goTo, send } = usePresentation();
   const [overview, setOverview] = useState(false);
 
-  useTheme(state.meta, state.theme);
-
   // --- Transitions ---
   const prevIndexRef = useRef(state.currentIndex);
   const stageRef = useRef(null);
   const exitRef = useRef(null);
-
-  // Refs used to pass data from render phase to layout effect
   const snapshotRef = useRef(null);
   const pendingRef = useRef(null);
 
   const currentSlide = state.slides[state.currentIndex];
 
-  // During render (before React commits), detect slide change and
-  // clone the current DOM so the exit layer shows the exact same pixels.
+  // During render, detect slide change and clone DOM for exit layer
   if (state.currentIndex !== prevIndexRef.current) {
     const dir = state.currentIndex > prevIndexRef.current ? 'forward' : 'backward';
     const incoming = state.slides[state.currentIndex];
-    const t = incoming?.transition ?? state.meta?.transition ?? 'none';
+
+    // Use the incoming slide's enter transition name, or 'none'
+    const t = incoming?.enter?.name ?? 'none';
 
     if (t !== 'none' && stageRef.current) {
       snapshotRef.current = stageRef.current.cloneNode(true);
@@ -36,8 +32,7 @@ export default function Presentation() {
     prevIndexRef.current = state.currentIndex;
   }
 
-  // After React commits the new slide content, set up the animations.
-  // Runs every render but bails immediately when there's no pending transition.
+  // After React commits, set up the transition animations
   useLayoutEffect(() => {
     const info = pendingRef.current;
     if (!info) return;
@@ -48,7 +43,7 @@ export default function Presentation() {
     const exitEl = exitRef.current;
     const stageEl = stageRef.current;
 
-    // Exit layer: insert the cloned old-slide DOM (untouched, no re-render)
+    // Exit layer: insert cloned old-slide DOM
     if (snapshot && exitEl) {
       exitEl.innerHTML = '';
       while (snapshot.firstChild) exitEl.appendChild(snapshot.firstChild);
@@ -62,7 +57,7 @@ export default function Presentation() {
     // Enter animation on the stage
     if (stageEl && info.transition !== 'none') {
       stageEl.className = 'transition-layer';
-      void stageEl.offsetWidth; // force reflow to restart animation
+      void stageEl.offsetWidth; // force reflow
       stageEl.className = `transition-layer slide-enter--${info.transition} dir-${info.dir}`;
     }
   });
@@ -92,12 +87,10 @@ export default function Presentation() {
   return (
     <PresentationContext.Provider value={{ state, connected, send, next, prev, goTo }}>
       <div className="presentation">
-        <div className="status">{connected ? '●' : '○'}</div>
+        <div className="status">{connected ? '\u25CF' : '\u25CB'}</div>
 
         <div className="transition-stage">
-          {/* Exit layer — populated with cloned DOM during transitions */}
           <div ref={exitRef} className="transition-layer" />
-          {/* Stage — always shows current slide, keyed to remount on slide change */}
           <div ref={stageRef} className="transition-layer">
             <SlideRenderer key={state.currentIndex} slide={currentSlide} step={state.currentStep ?? 0} meta={state.meta} slideNum={state.currentIndex + 1} total={state.slides.length} />
           </div>

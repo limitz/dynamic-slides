@@ -1,81 +1,150 @@
 import { useRef, useLayoutEffect } from 'react';
 import { loadAnimation } from './AnimationLoader';
-import Animated from './Animated';
-import ModuleLoader from './ModuleLoader';
 import LayoutLoader from './LayoutLoader';
-import { md, mdi } from './md';
+import ModuleLoader from './ModuleLoader';
 
-// Animates a <li> directly (can't wrap li in a div without breaking list semantics)
-function AnimatedLi({ text, animate, delay = 0, visible, triggerAnim }) {
-  const ref = useRef(null);
+/**
+ * Animate an element using the Web Animation API.
+ * Expects opacity:0 as initial state for enter animations.
+ * All animations use fill:'forwards' — no snap-back.
+ */
+function useAnimation(ref, animation, trigger) {
   const firedRef = useRef(false);
 
   useLayoutEffect(() => {
-    if (!triggerAnim || firedRef.current || !animate || !ref.current) return;
+    if (!trigger || firedRef.current || !animation || !ref.current) return;
     firedRef.current = true;
-    loadAnimation(animate).then(fn => {
+    loadAnimation(animation.name).then(fn => {
       if (!fn || !ref.current) return;
-      fn(ref.current, { delay });
-      ref.current.style.opacity = '';
+      fn(ref.current, { delay: animation.delay || 0 });
     });
-  }, [triggerAnim]);
+  }, [trigger]);
+}
+
+/**
+ * Renders a single bullet item with reveal/dismiss/animation support.
+ */
+function BulletItem({ bullet, step }) {
+  const ref = useRef(null);
+  const visible = bullet.reveal == null || step >= bullet.reveal;
+  const dismissed = bullet.dismiss != null && step >= bullet.dismiss;
+  const showEnter = visible && !dismissed;
+
+  useAnimation(ref, bullet.enter, showEnter);
+  useAnimation(ref, bullet.exit, dismissed);
+
+  const hidden = !visible || (dismissed && !bullet.exit);
 
   return (
     <li
       ref={ref}
-      style={(!visible || animate) ? { opacity: 0, pointerEvents: visible ? undefined : 'none' } : undefined}
-      dangerouslySetInnerHTML={{ __html: mdi(text) }}
+      className={bullet.class || undefined}
+      style={{
+        opacity: hidden || bullet.enter ? 0 : undefined,
+        display: hidden && !bullet.enter ? 'none' : undefined,
+      }}
+      dangerouslySetInnerHTML={{ __html: bullet.html }}
     />
   );
 }
 
-// Bullets: items can be strings or { text, animate, delay, fragment }
-function Bullets({ items, step = Infinity }) {
-  if (!items?.length) return null;
-  let fragCount = 0;
-  return (
-    <ul className="slide__bullets">
-      {items.map((item, i) => {
-        const isObj = typeof item === 'object' && item !== null;
-        const text       = isObj ? item.text      : item;
-        const animate    = isObj ? item.animate    : null;
-        const delay      = isObj ? (item.delay ?? 0) : 0;
-        const isFragment = isObj && item.fragment;
-        const fragIdx    = isFragment ? ++fragCount : 0;
-        const visible    = !isFragment || step >= fragIdx;
+/**
+ * Renders a segment (content + bullets), respecting reveal.
+ */
+function Segment({ segment, step, parentReveal }) {
+  const effectiveReveal = segment.reveal ?? parentReveal;
+  const visible = effectiveReveal == null || step >= effectiveReveal;
 
-        return (
-          <AnimatedLi
-            key={i}
-            text={text}
-            animate={animate}
-            delay={delay}
-            visible={visible}
-            triggerAnim={visible}
-          />
-        );
-      })}
-    </ul>
+  if (!visible) return null;
+
+  return (
+    <>
+      {segment.content && (
+        <div dangerouslySetInnerHTML={{ __html: segment.content }} />
+      )}
+      {segment.bullets.length > 0 && (
+        <ul className="slide__bullets">
+          {segment.bullets.map((bullet, i) => (
+            <BulletItem key={i} bullet={bullet} step={step} />
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
-// Wrap a heading/body element with an optional entrance animation
-function El({ tag: Tag, content, animate, delay, className }) {
-  if (!content) return null;
-  const isBlock = Tag === 'p' || Tag === 'div';
-  const html = isBlock ? md(content) : mdi(content);
-  const el = <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
-  if (!animate) return el;
-  return <Animated name={animate} delay={delay}>{el}</Animated>;
+/**
+ * Renders a section with enter/exit animation and reveal/dismiss support.
+ */
+function Section({ section, step }) {
+  const ref = useRef(null);
+  const visible = section.reveal == null || step >= section.reveal;
+  const dismissed = section.dismiss != null && step >= section.dismiss;
+  const showEnter = visible && !dismissed;
+
+  useAnimation(ref, section.enter, showEnter);
+  useAnimation(ref, section.exit, dismissed);
+
+  const hidden = !visible || (dismissed && !section.exit);
+
+  // Module sections render the module instead of content
+  if (section.module) {
+    return (
+      <div
+        ref={ref}
+        className={section.class || undefined}
+        style={{
+          opacity: hidden || section.enter ? 0 : undefined,
+          display: hidden && !section.enter ? 'none' : undefined,
+        }}
+      >
+        {section.title && <h2>{section.title}</h2>}
+        {showEnter && <ModuleLoader path={section.module} section={section} />}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={section.class || undefined}
+      style={{
+        opacity: hidden || section.enter ? 0 : undefined,
+        display: hidden && !section.enter ? 'none' : undefined,
+      }}
+    >
+      {section.title && <h2>{section.title}</h2>}
+      {section.segments.map((seg, i) => (
+        <Segment key={i} segment={seg} step={step} parentReveal={section.reveal} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Builds a slot map from sections for layout components.
+ * Sections with IDs become named slots; sections without IDs
+ * are collected under a numeric key.
+ */
+function buildSlots(sections, step) {
+  const slots = {};
+  let unnamed = 0;
+
+  for (const section of sections) {
+    // Handle dot-notation: "body.col1" -> top-level key is the first segment
+    const id = section.id || String(unnamed++);
+    slots[id] = <Section key={id} section={section} step={step} />;
+  }
+
+  return slots;
 }
 
 function SlideFooter({ meta, slideNum, total }) {
   if (!meta) return null;
-  const today = new Date().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
   return (
     <div className="slide__footer">
-      <span>{[meta.title, meta.author].filter(Boolean).join(' — ')}</span>
-      <span>{today}</span>
+      <span>{[meta.title, meta.author].filter(Boolean).join(' \u2014 ')}</span>
+      <span>{meta.date || ''}</span>
       <span>{slideNum} / {total}</span>
     </div>
   );
@@ -84,126 +153,26 @@ function SlideFooter({ meta, slideNum, total }) {
 export default function SlideRenderer({ slide, mini = false, step = Infinity, meta, slideNum, total }) {
   if (!slide) return <div className="slide slide--empty">No slides loaded</div>;
 
-  const cls = `slide slide--${slide.layout || 'default'}${mini ? ' slide--mini' : ''}`;
-  const c = slide.content || {};
+  const cls = `slide${slide.class ? ` ${slide.class}` : ''}${mini ? ' slide--mini' : ''}`;
 
-  switch (slide.layout) {
-    case 'title':
-      return (
-        <div className={cls}>
-          <El tag="h1" content={c.heading}    animate={c.heading_animate}    delay={c.heading_delay    ?? 0} />
-          <El tag="h2" content={c.subheading} animate={c.subheading_animate} delay={c.subheading_delay ?? 150} />
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'content':
-      return (
-        <div className={cls}>
-          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
-          <El tag="p"  content={c.body}    animate={c.body_animate}    delay={c.body_delay    ?? 100} />
-          <Bullets items={c.bullets} step={step} />
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'bullets':
-      return (
-        <div className={cls}>
-          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
-          <Bullets items={c.bullets} step={step} />
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'split':
-      return (
-        <div className={cls}>
-          <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />
-          <div className="slide__columns">
-            <div className="slide__left">
-              <El tag="p"  content={c.left}    animate={c.left_animate}    delay={c.left_delay    ?? 100} />
-              <Bullets items={c.left_bullets}  step={step} />
-              {c.left_image && <img src={c.left_image} alt={c.left_image_alt || ''} className="slide__media slide__media--column" style={{ objectFit: c.left_image_fit || 'contain' }} />}
-            </div>
-            <div className="slide__right">
-              <El tag="p" content={c.right} animate={c.right_animate} delay={c.right_delay ?? 100} />
-              <Bullets items={c.right_bullets} step={step} />
-              {c.right_image && <img src={c.right_image} alt={c.right_image_alt || ''} className="slide__media slide__media--column" style={{ objectFit: c.right_image_fit || 'contain' }} />}
-            </div>
-          </div>
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'custom':
-      return (
-        <div className={cls}>
-          {!mini && <ModuleLoader path={slide.module} slide={slide} />}
-          {mini  && <div className="slide__module-label">{slide.module || 'custom'}</div>}
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'image':
-      return (
-        <div className={cls}>
-          {c.heading && <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />}
-          {c.src && (
-            <div className="slide__media-wrap">
-              <img
-                src={c.src}
-                alt={c.alt || ''}
-                className="slide__media"
-                style={{ objectFit: c.fit || 'contain' }}
-              />
-            </div>
-          )}
-          {c.caption && <p className="slide__caption" dangerouslySetInnerHTML={{ __html: mdi(c.caption) }} />}
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'video':
-      return (
-        <div className={cls}>
-          {c.heading && <El tag="h2" content={c.heading} animate={c.heading_animate} delay={c.heading_delay ?? 0} />}
-          {c.src && (
-            <div className="slide__media-wrap">
-              <video
-                src={c.src}
-                className="slide__media"
-                autoPlay={c.autoplay ?? false}
-                loop={c.loop ?? false}
-                muted={c.muted ?? true}
-                controls={c.controls ?? false}
-                playsInline
-              />
-            </div>
-          )}
-          {c.caption && <p className="slide__caption" dangerouslySetInnerHTML={{ __html: mdi(c.caption) }} />}
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    case 'blank':
-      return (
-        <div className={cls}>
-          {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
-        </div>
-      );
-
-    default:
-      return (
-        <LayoutLoader
-          layout={slide.layout}
-          slide={slide}
-          step={step}
-          meta={meta}
-          slideNum={slideNum}
-          total={total}
-          mini={mini}
-        />
-      );
+  // Slide-level module
+  if (slide.module) {
+    return (
+      <div className={cls}>
+        {!mini && <ModuleLoader path={slide.module} slide={slide} />}
+        {mini && <div style={{ opacity: 0.3 }}>{slide.module}</div>}
+        {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
+      </div>
+    );
   }
+
+  const slots = buildSlots(slide.sections, step);
+
+  return (
+    <div className={cls}>
+      {slide.title && <h1>{slide.title}</h1>}
+      <LayoutLoader layout={slide.layout} slots={slots} />
+      {!mini && <SlideFooter meta={meta} slideNum={slideNum} total={total} />}
+    </div>
+  );
 }

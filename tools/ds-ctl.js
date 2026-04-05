@@ -6,7 +6,7 @@
  *   node ds-ctl.js state
  *   node ds-ctl.js next
  *   node ds-ctl.js prev
- *   node ds-ctl.js goto <slide-id>
+ *   node ds-ctl.js goto <slide-index>
  *   node ds-ctl.js reload
  *
  * Set PRESENT_URL to override the default server address.
@@ -31,8 +31,9 @@ const commands = {
     const slide = data.slides[data.currentIndex];
     console.log(JSON.stringify({
       currentIndex: data.currentIndex,
+      currentStep: data.currentStep,
       total: data.slides.length,
-      slide: slide ? { id: slide.id, layout: slide.layout, heading: slide.content?.heading } : null,
+      slide: slide ? { layout: slide.layout, title: slide.title, maxStep: slide.maxStep } : null,
       meta: data.meta,
     }, null, 2));
   },
@@ -48,11 +49,11 @@ const commands = {
   },
 
   async goto() {
-    const id = args[0];
-    if (!id) { console.error('Usage: goto <slide-id>'); process.exit(1); }
-    const data = await req('POST', `/slide/${id}`);
+    const index = args[0];
+    if (index == null) { console.error('Usage: goto <slide-index>'); process.exit(1); }
+    const data = await req('POST', `/slide/${index}`);
     if (data.error) { console.error(data.error); process.exit(1); }
-    console.log(`↷ jumped to slide ${data.currentIndex + 1} (${id})`);
+    console.log(`jumped to slide ${data.currentIndex + 1}`);
   },
 
   async reload() {

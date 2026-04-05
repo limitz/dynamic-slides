@@ -1,10 +1,11 @@
 {
   "name": "dynamic-slides",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
+    "setup": "bash setup.sh",
     "engine": "node slide-engine/index.js",
-    "viewer": "cd slide-viewer && npx vite",
+    "viewer": "npx vite",
     "dev": "npm run engine & npm run viewer"
   }
 }

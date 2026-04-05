@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 
-// Built-in modules
-const builtinMap = import.meta.glob('./modules/**/*.{jsx,tsx}');
-
-// User modules from project directory
-const projectMap = import.meta.glob('@project/modules/**/*.{jsx,tsx}');
+// Module components from project directory
+const moduleMap = import.meta.glob('./modules/**/*.{jsx,tsx}');
 
 function findLoader(map, suffix) {
   for (const [key, loader] of Object.entries(map)) {
@@ -14,7 +11,7 @@ function findLoader(map, suffix) {
   return null;
 }
 
-export default function ModuleLoader({ path, slide }) {
+export default function ModuleLoader({ path, slide, section }) {
   const [Component, setComponent] = useState(null);
   const [error, setError] = useState(null);
 
@@ -24,15 +21,12 @@ export default function ModuleLoader({ path, slide }) {
     // Normalise: accept "modules/Foo.jsx", "./modules/Foo.jsx", or "Foo.jsx"
     let normalized = path.startsWith('./') ? path.slice(2) : path;
     if (!normalized.includes('/')) normalized = `modules/${normalized}`;
+    if (!normalized.endsWith('.jsx') && !normalized.endsWith('.tsx')) normalized += '.jsx';
 
-    // Try project modules first, then built-in
-    let loader = findLoader(projectMap, `/${normalized}`);
-    if (!loader) {
-      loader = findLoader(builtinMap, `/${normalized}`) || builtinMap[`./${normalized}`];
-    }
+    const loader = findLoader(moduleMap, `/${normalized}`) || moduleMap[`./${normalized}`];
 
     if (!loader) {
-      const allKeys = [...Object.keys(projectMap), ...Object.keys(builtinMap)];
+      const allKeys = Object.keys(moduleMap);
       setError(`Module not found: ${normalized}\nAvailable: ${allKeys.join(', ') || '(none)'}`);
       return;
     }
@@ -53,12 +47,12 @@ export default function ModuleLoader({ path, slide }) {
   }
 
   if (!Component) {
-    return <div className="module-loading">Loading {path}…</div>;
+    return <div className="module-loading">Loading {path}\u2026</div>;
   }
 
   return (
     <ErrorBoundary key={path}>
-      <Component slide={slide} />
+      <Component slide={slide} section={section} />
     </ErrorBoundary>
   );
 }

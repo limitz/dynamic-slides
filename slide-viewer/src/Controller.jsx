@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { usePresentation } from './usePresentation';
 
 function useClock() {
@@ -59,36 +59,35 @@ export default function Controller() {
               ? `Slide ${state.currentIndex + 1} of ${state.slides.length}`
               : 'No slides'}
           </span>
-          {currentSlide?.id && <span>#{currentSlide.id}</span>}
         </div>
-        {currentSlide?.content?.heading && (
-          <div className="controller__heading">{currentSlide.content.heading}</div>
+        {currentSlide?.title && (
+          <div className="controller__heading">{currentSlide.title}</div>
         )}
-        {currentSlide?.content?.notes && (
-          <div className="controller__notes">{currentSlide.content.notes}</div>
+        {currentSlide?.notes && (
+          <div className="controller__notes">{currentSlide.notes}</div>
         )}
         {nextSlide && (
           <div className="controller__next-up">
-            Next: {nextSlide.content?.heading || nextSlide.id || `Slide ${state.currentIndex + 2}`}
+            Next: {nextSlide.title || `Slide ${state.currentIndex + 2}`}
           </div>
         )}
       </div>
 
       <div className="controller__nav">
-        <button onClick={prev} disabled={state.currentIndex === 0}>◀ Prev</button>
-        <button onClick={next} disabled={state.currentIndex >= state.slides.length - 1}>Next ▶</button>
+        <button onClick={prev} disabled={state.currentIndex === 0}>Prev</button>
+        <button onClick={next} disabled={state.currentIndex >= state.slides.length - 1}>Next</button>
       </div>
 
       <div className="controller__list">
         {state.slides.map((slide, i) => (
           <button
-            key={slide.id || i}
+            key={i}
             className={`controller__slide-btn ${i === state.currentIndex ? 'active' : ''}`}
             onClick={() => goTo(i)}
           >
             <span className="controller__slide-num">{i + 1}</span>
             <span className="controller__slide-label">
-              {slide.content?.heading || slide.id || `Slide ${i + 1}`}
+              {slide.title || `Slide ${i + 1}`}
             </span>
           </button>
         ))}
