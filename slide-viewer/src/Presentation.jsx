@@ -27,6 +27,9 @@ export default function Presentation() {
 
     if (t !== 'none' && stageRef.current) {
       snapshotRef.current = stageRef.current.cloneNode(true);
+      // Hide stage immediately so the new slide doesn't flash
+      // before useLayoutEffect applies the enter animation
+      stageRef.current.style.opacity = '0';
     }
     pendingRef.current = { dir, transition: t };
     prevIndexRef.current = state.currentIndex;
@@ -56,9 +59,12 @@ export default function Presentation() {
 
     // Enter animation on the stage
     if (stageEl && info.transition !== 'none') {
+      stageEl.style.opacity = '';
       stageEl.className = 'transition-layer';
       void stageEl.offsetWidth; // force reflow
       stageEl.className = `transition-layer slide-enter--${info.transition} dir-${info.dir}`;
+    } else if (stageEl) {
+      stageEl.style.opacity = '';
     }
   });
 
