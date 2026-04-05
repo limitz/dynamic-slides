@@ -20,20 +20,20 @@ A Markdown-Powered Presentation Engine
 * Nested layouts with dot-notation slots {enter=fade-up reveal=3}
 * Speaker notes via HTML comments {enter=fade-up reveal=4}
 
-## Reveal & Dismiss {enter=zoom}
+## Progressive Reveal {enter=zoom}
 
-<!-- Demonstrates the reveal/dismiss lifecycle. -->
+<!-- Demonstrates step-by-step content reveals. -->
 
 ### Step-by-step content {#body reveal=0 enter=fade-up}
 
 This paragraph is visible immediately (reveal=0).
 
-* I appear at step 1 and vanish at step 3 {enter=slide-up reveal=1 exit=fade-out dismiss=3}
-* I appear at step 2 and stay {enter=slide-up reveal=2}
+* I appear at step 1 {enter=slide-up reveal=1}
+* I appear at step 2 {enter=slide-up reveal=2}
 
 --- {reveal=3}
 
-This paragraph replaces the first bullet at step 3.
+This paragraph appears at step 3.
 
 It can contain **bold**, *italic*, `code`, and [links](https://example.com).
 
@@ -78,8 +78,6 @@ Any inline markdown works: **bold**, *italic*, ~~strikethrough~~, and `code`.
 * slide-up (more dramatic) {enter=slide-up reveal=2}
 
 --- {reveal=3}
-
-Exit animations: `fade-out`, `fade-down`, `slide-down`
 
 The `@delay` suffix staggers timing: `enter=fade-up@300`
 

@@ -4,12 +4,12 @@ import LayoutLoader from './LayoutLoader';
 import ModuleLoader from './ModuleLoader';
 
 /**
- * Reversible animation hook using the Web Animation API.
+ * Animate an element using the Web Animation API.
  *
  * Animation plugins export { keyframes, options }. The hook plays keyframes
- * forward when trigger becomes true, and plays them reversed when trigger
- * becomes false. After the reverse animation finishes it is cancelled so the
- * element reverts to its inline styles — exactly matching its initial state.
+ * forward when trigger becomes true. When trigger reverts (backward
+ * navigation), the animation is cancelled instantly — React's inline styles
+ * (display:none) take over, so the element leaves the layout cleanly.
  *
  * Legacy function-based plugins are still supported (fire-and-forget).
  */
@@ -25,7 +25,6 @@ function useAnimation(ref, animation, trigger) {
       if (!plugin || !ref.current) return;
 
       if (typeof plugin === 'function') {
-        // Legacy function-based animation (fire-and-forget)
         if (trigger && !firedRef.current) {
           firedRef.current = true;
           plugin(el, { delay: animation.delay || 0 });
@@ -33,52 +32,40 @@ function useAnimation(ref, animation, trigger) {
         return;
       }
 
-      // Declarative animation with auto-reverse
       const { keyframes, options } = plugin;
 
       if (trigger && !firedRef.current) {
-        // Forward: play animation (hidden → visible)
         firedRef.current = true;
         if (animRef.current) animRef.current.cancel();
         animRef.current = el.animate(keyframes, {
           ...options, delay: animation.delay || 0, fill: 'both',
         });
       } else if (!trigger && firedRef.current) {
-        // Backward: play reverse (visible → hidden), then cancel on finish
-        // so the element reverts to its inline styles (same as never-animated)
         firedRef.current = false;
         if (animRef.current) animRef.current.cancel();
-        const reverse = el.animate([...keyframes].reverse(), {
-          ...options, delay: 0, fill: 'both',
-        });
-        reverse.addEventListener('finish', () => reverse.cancel(), { once: true });
-        animRef.current = reverse;
+        animRef.current = null;
       }
     });
   }, [trigger]);
 }
 
 /**
- * Renders a single bullet item with reveal/dismiss/animation support.
+ * Renders a single bullet item with reveal and enter animation.
+ * Hidden bullets use display:none so they never affect layout.
  */
 function BulletItem({ bullet, step }) {
   const ref = useRef(null);
   const visible = bullet.reveal == null || step >= bullet.reveal;
-  const dismissed = bullet.dismiss != null && step >= bullet.dismiss;
-  const showEnter = visible && !dismissed;
 
-  useAnimation(ref, bullet.enter, showEnter);
-  useAnimation(ref, bullet.exit, dismissed);
-
-  const hidden = !visible || (dismissed && !bullet.exit);
+  useAnimation(ref, bullet.enter, visible);
 
   return (
     <li
       ref={ref}
       className={bullet.class || undefined}
       style={{
-        opacity: hidden || bullet.enter ? 0 : undefined,
-        display: hidden && !bullet.enter ? 'none' : undefined,
+        display: visible ? undefined : 'none',
+        opacity: visible && bullet.enter ? 0 : undefined,
       }}
       dangerouslySetInnerHTML={{ __html: bullet.html }}
     />
@@ -111,32 +98,27 @@ function Segment({ segment, step, parentReveal }) {
 }
 
 /**
- * Renders a section with enter/exit animation and reveal/dismiss support.
+ * Renders a section with enter animation and reveal support.
+ * Hidden sections use display:none so they never affect layout.
  */
 function Section({ section, step }) {
   const ref = useRef(null);
   const visible = section.reveal == null || step >= section.reveal;
-  const dismissed = section.dismiss != null && step >= section.dismiss;
-  const showEnter = visible && !dismissed;
 
-  useAnimation(ref, section.enter, showEnter);
-  useAnimation(ref, section.exit, dismissed);
+  useAnimation(ref, section.enter, visible);
 
-  const hidden = !visible || (dismissed && !section.exit);
-
-  // Module sections render the module instead of content
   if (section.module) {
     return (
       <div
         ref={ref}
         className={section.class || undefined}
         style={{
-          opacity: hidden || section.enter ? 0 : undefined,
-          display: hidden && !section.enter ? 'none' : undefined,
+          display: visible ? undefined : 'none',
+          opacity: visible && section.enter ? 0 : undefined,
         }}
       >
         {section.title && <h2>{section.title}</h2>}
-        {showEnter && <ModuleLoader path={section.module} section={section} />}
+        {visible && <ModuleLoader path={section.module} section={section} />}
       </div>
     );
   }
@@ -146,8 +128,8 @@ function Section({ section, step }) {
       ref={ref}
       className={section.class || undefined}
       style={{
-        opacity: hidden || section.enter ? 0 : undefined,
-        display: hidden && !section.enter ? 'none' : undefined,
+        display: visible ? undefined : 'none',
+        opacity: visible && section.enter ? 0 : undefined,
       }}
     >
       {section.title && <h2>{section.title}</h2>}
